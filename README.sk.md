@@ -114,4 +114,4 @@ python3 scripts/build_repo.py
 
 ## Licencia
 
-GPL-2.0-or-later. Pozri [LICENSE](LICENSE).
+GPL-3.0-or-later. Pozri [LICENSE](LICENSE).

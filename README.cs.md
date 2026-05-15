@@ -114,4 +114,4 @@ python3 scripts/build_repo.py
 
 ## Licence
 
-GPL-2.0-or-later. Viz [LICENSE](LICENSE).
+GPL-3.0-or-later. Viz [LICENSE](LICENSE).
