@@ -152,6 +152,31 @@ msgctxt "#30404"
 msgid "No channels found"
 msgstr "No channels found"
 
+# Resume playback
+msgctxt "#30410"
+msgid "Playback"
+msgstr "Playback"
+
+msgctxt "#30411"
+msgid "Remember playback position (resume)"
+msgstr "Remember playback position (resume)"
+
+msgctxt "#30412"
+msgid "Really clear %d saved playback positions?"
+msgstr "Really clear %d saved playback positions?"
+
+msgctxt "#30413"
+msgid "Cleared %d saved positions"
+msgstr "Cleared %d saved positions"
+
+msgctxt "#30414"
+msgid "No saved playback positions"
+msgstr "No saved playback positions"
+
+msgctxt "#30415"
+msgid "Clear saved playback positions"
+msgstr "Clear saved playback positions"
+
 # Search / History dialogs
 msgctxt "#30550"
 msgid "Search recordings"

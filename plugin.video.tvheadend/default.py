@@ -34,6 +34,7 @@ import xbmcplugin
 
 from lib import classifier
 from lib import history
+from lib import resume
 from lib.errors import AddonErrorException
 from lib.tvh_client import Tvheadend
 from lib.util import ContentProviderShim, addon, log, tr
@@ -103,7 +104,8 @@ def add_dir(label: str, url: str, icon: str | None = None,
 
 
 def add_playable(label: str, url: str, icon: str | None = None,
-                 info: dict | None = None) -> None:
+                 info: dict | None = None,
+                 resume_uuid: str | None = None) -> None:
     li = xbmcgui.ListItem(label=label)
     li.setProperty("IsPlayable", "true")
     if icon:
@@ -124,6 +126,20 @@ def add_playable(label: str, url: str, icon: str | None = None,
                     pass
         except Exception:
             li.setInfo("video", info)
+    # Resume properties — ak je uuid známe a v úložisku máme pozíciu, doplníme.
+    # Skin (Estuary aj viaceré tretie strany) potom kreslia progress bar overlay
+    # na thumbnail a v info dialógu zobrazujú "Resume from X:XX".
+    if resume_uuid and _settings_bool("resume_enabled", True):
+        try:
+            saved = resume.get(resume_uuid)
+            if saved:
+                pos, total, _ts = saved
+                if pos >= 30:
+                    li.setProperty("ResumeTime", str(pos))
+                    if total > 0:
+                        li.setProperty("TotalTime", str(total))
+        except Exception:
+            pass
     xbmcplugin.addDirectoryItem(_HANDLE, url, li, isFolder=False)
 
 
@@ -335,7 +351,8 @@ def _add_dvr_entry_item(e: dict, episode_format: bool = False) -> None:
 
     dvr_url = e.get('url') or ''
     play_url = _build_play_dvr_url(e, title)
-    add_playable(label, play_url, icon=icon, info=_dvr_info(e, label))
+    add_playable(label, play_url, icon=icon, info=_dvr_info(e, label),
+                 resume_uuid=e.get('uuid'))
 
 
 # --------------------------------------------------------------------------
@@ -651,7 +668,8 @@ def handler_archive_day(args: dict) -> None:
         except Exception:
             pass
         play_url = _build_play_dvr_url(e, title)
-        add_playable(label, play_url, icon=icon, info=_dvr_info(e, label))
+        add_playable(label, play_url, icon=icon, info=_dvr_info(e, label),
+                     resume_uuid=e.get('uuid'))
 
     end_directory()
 
@@ -838,7 +856,34 @@ def handler_play_dvr(args: dict) -> None:
         li.setContentLookup(False)
     except Exception:
         pass
+
+    # Resume playback — načítaj uloženú pozíciu a daj ju Kodi-mu cez properties.
+    # Kodi automaticky ponúkne "Resume from X:XX / Start from beginning" dialóg.
+    dvr_uuid = args.get("uuid") or ""
+    resume_enabled = _settings_bool("resume_enabled", True)
+    if resume_enabled and dvr_uuid:
+        try:
+            saved = resume.get(dvr_uuid)
+            if saved:
+                pos, total, _ts = saved
+                if pos >= 30:  # filter musí byť konzistentný s lib/resume.py
+                    li.setProperty("ResumeTime", str(pos))
+                    if total > 0:
+                        li.setProperty("TotalTime", str(total))
+                    log("resume: ponúkam pokračovanie od %.0fs (total %.0fs) pre %s"
+                        % (pos, total, dvr_uuid), xbmc.LOGDEBUG)
+        except Exception as e:
+            log("resume pre-play failed: %s" % e, xbmc.LOGWARNING)
+
     xbmcplugin.setResolvedUrl(_HANDLE, True, li)
+
+    # Spustí tracker — blokuje plugin script kým prehrávanie nebeží.
+    # Po stopnutí uloží poslednú pozíciu (alebo clearne ak dohral do konca).
+    if resume_enabled and dvr_uuid:
+        try:
+            resume.ResumeTracker(dvr_uuid).run()
+        except Exception as e:
+            log("resume tracker failed: %s" % e, xbmc.LOGWARNING)
 
 
 # --------------------------------------------------------------------------
@@ -914,7 +959,8 @@ def handler_recent(args: dict) -> None:
             ts=str(ts_val),
             duration=str(int(h.get('duration') or 0)),
         )
-        add_playable(label, play_url, icon=icon, info=info)
+        add_playable(label, play_url, icon=icon, info=info,
+                     resume_uuid=h.get('uuid'))
 
     end_directory()
 
@@ -925,6 +971,20 @@ def handler_history_clear(args: dict) -> None:
         history.clear()
         notify(tr(30555))
     # Refresh aktuálneho zoznamu
+    xbmc.executebuiltin("Container.Refresh")
+    end_directory(succeeded=True, content_type="")
+
+
+def handler_resume_clear(args: dict) -> None:
+    """Vymaže všetky uložené pozície prehrávania (s potvrdením)."""
+    n = resume.count()
+    if n == 0:
+        notify(tr(30414))  # "Žiadne uložené pozície"
+        end_directory(succeeded=True, content_type="")
+        return
+    if xbmcgui.Dialog().yesno(tr(30400), tr(30412) % n if "%d" in tr(30412) else tr(30412)):
+        cleared = resume.clear_all()
+        notify(tr(30413) % cleared)
     xbmc.executebuiltin("Container.Refresh")
     end_directory(succeeded=True, content_type="")
 
@@ -1106,6 +1166,7 @@ _ROUTES = {
     "play_dvr":                 handler_play_dvr,
     "recent":                   handler_recent,
     "history_clear":            handler_history_clear,
+    "resume_clear":             handler_resume_clear,
     "search":                   handler_search,
     "test_connection":          lambda args: handler_test_connection(),
     "settings":                 lambda args: handler_settings(),

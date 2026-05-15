@@ -152,6 +152,31 @@ msgctxt "#30404"
 msgid "No channels found"
 msgstr "Nenalezeny žádné kanály"
 
+# Resume playback
+msgctxt "#30410"
+msgid "Playback"
+msgstr "Přehrávání"
+
+msgctxt "#30411"
+msgid "Remember playback position (resume)"
+msgstr "Pamatovat si pozici přehrávání (pokračování)"
+
+msgctxt "#30412"
+msgid "Really clear %d saved playback positions?"
+msgstr "Opravdu smazat %d uložených pozic?"
+
+msgctxt "#30413"
+msgid "Cleared %d saved positions"
+msgstr "Smazaných pozic: %d"
+
+msgctxt "#30414"
+msgid "No saved playback positions"
+msgstr "Žádné uložené pozice"
+
+msgctxt "#30415"
+msgid "Clear saved playback positions"
+msgstr "Smazat uložené pozice přehrávání"
+
 # Search / History dialogs
 msgctxt "#30550"
 msgid "Search recordings"

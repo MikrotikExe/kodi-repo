@@ -137,6 +137,20 @@
                     </dependencies>
                 </setting>
             </group>
+            <group id="3" label="30410">
+                <setting id="resume_enabled" type="boolean" label="30411">
+                    <level>0</level>
+                    <default>true</default>
+                    <control type="toggle"/>
+                </setting>
+                <setting id="clear_resume" type="action" label="30415">
+                    <level>0</level>
+                    <data>RunPlugin(plugin://plugin.video.tvheadend/?action=resume_clear)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                </setting>
+            </group>
         </category>
     </section>
 </settings>

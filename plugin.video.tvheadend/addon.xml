@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.tvheadend"
        name="Tvheadend Archive"
-       version="1.0.0"
+       version="1.0.1"
        provider-name="Andrebas">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
@@ -20,7 +20,15 @@
         <platform>all</platform>
         <license>GPL-3.0-or-later</license>
         <source>https://jurajchudy.sk/</source>
-        <news>1.0.0 - First public release.
+        <news>1.0.1 - Resume playback.
+
+ - Recordings now remember where you left off. After stopping playback, Kodi will offer "Resume from X:XX / Start from beginning" the next time you open the same recording.
+ - Progress bar overlay on thumbnails in archive listings (visible in skins that support ResumeTime/TotalTime properties, e.g. Estuary).
+ - Smart filtering: positions under 30 seconds are not saved (didn't really watch), positions within the last 60 seconds or 95% of length are cleared (watched to end).
+ - Cap 500 saved positions, oldest evicted automatically.
+ - New settings: "Remember playback position" toggle (default on) and "Clear saved playback positions" action button.
+
+1.0.0 - First public release.
 
 Features:
  - DVR archive browser grouped by smart categories and subgenres (Films, Series, Sports, News, Shows, Kids, Music, Arts, Docs, Hobby, Other). Series are auto-grouped by canonical title across episodes.
