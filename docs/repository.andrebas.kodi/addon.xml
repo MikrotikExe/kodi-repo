@@ -19,7 +19,7 @@
         <summary lang="cs_CZ">Kodi doplňky od Andrebasa (Tvheadend Archive a další)</summary>
         <description lang="cs_CZ">Repozitář Kodi doplňků spravovaných Andrebasem. Zatím obsahuje Tvheadend Archive — prohlížeč DVR archivu, který doplňuje pvr.hts.</description>
         <platform>all</platform>
-        <license>GPL-3.0-or-later</license>
+        <license>GPL-2.0-or-later</license>
         <source>https://github.com/MikrotikExe/kodi-repo</source>
         <news>1.0.0 - Initial release. Hosts plugin.video.tvheadend.</news>
         <assets>

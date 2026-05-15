@@ -49,11 +49,27 @@ def get_addon_info(addon_dir: Path) -> tuple[str, str]:
 
 
 def zip_addon(addon_dir: Path, out_zip: Path) -> None:
-    """Zabalí addon do ZIP-u. Štruktúra v zipe: <addon_id>/<files...>"""
+    """Zabalí addon do ZIP-u. Štruktúra v zipe: <addon_id>/<files...>
+
+    Pred zostavením nového ZIPu zmaže všetky staré verzie toho istého addonu
+    v target priečinku — inak by GitHub Release asset list a docs/ priečinok
+    postupne hromadili stale ZIPy pri každom version bump-e.
+    """
     out_zip.parent.mkdir(parents=True, exist_ok=True)
+    addon_id = addon_dir.name
+
+    # Vyčistiť všetky staré verzie tohto addonu (<addon_id>-X.Y.Z.zip)
+    for old in out_zip.parent.glob(f"{addon_id}-*.zip"):
+        if old != out_zip:
+            try:
+                old.unlink()
+                print(f"    cleaned: {old.name}")
+            except OSError as e:
+                print(f"    WARN: could not remove {old.name}: {e}")
+
     if out_zip.exists():
         out_zip.unlink()
-    addon_id = addon_dir.name
+
     with zipfile.ZipFile(out_zip, "w", zipfile.ZIP_DEFLATED) as zf:
         for path in addon_dir.rglob("*"):
             # Preskočíme cache/.git/.DS_Store
