@@ -1,5 +1,7 @@
 # Andrebas Kodi Repository
 
+**Read this in:** 🇬🇧 [English](README.md) · 🇸🇰 [Slovenčina](README.sk.md) · 🇨🇿 [Čeština](README.cs.md)
+
 Personal Kodi addon repository hosting addons maintained by **Andrebas**.
 
 Currently includes:
