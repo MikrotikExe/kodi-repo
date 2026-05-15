@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addons>
+<addon id="plugin.video.tvheadend"
+       name="Tvheadend Archive"
+       version="1.0.0"
+       provider-name="Andrebas">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+        <import addon="script.module.requests" version="2.22.0"/>
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en_GB">Smart archive browser for Tvheadend DVR recordings</summary>
+        <summary lang="sk_SK">Inteligentný prehliadač archívu nahrávok z Tvheadend</summary>
+        <summary lang="cs_CZ">Inteligentní prohlížeč archivu nahrávek z Tvheadend</summary>
+        <description lang="en_GB">A DVR archive companion for Tvheadend, designed to complement the official pvr.hts client. While pvr.hts handles Live TV, EPG and timers in Kodi's native PVR section, Tvheadend Archive focuses on what pvr.hts does not: browsing the DVR archive grouped by smart categories and subgenres (Films, Series, Sports, News, Shows, Kids, Music, Arts, Docs, Hobby, Other), searching recordings by title without diacritics, and a "Recently watched" history. Live TV is also available as a bonus.</description>
+        <description lang="sk_SK">Doplnkový prehliadač DVR archívu pre Tvheadend, navrhnutý ako spoločník k oficiálnemu klientovi pvr.hts. Zatiaľ čo pvr.hts rieši Živé vysielanie, EPG a časovače v natívnej PVR sekcii Kodi, Tvheadend Archive sa zameriava na to, čo pvr.hts nerobí: prechádzanie DVR archívu roztriedeného do inteligentných kategórií a podžánrov (Filmy, Seriály, Šport, Spravodajstvo, Šou, Detské, Hudba, Umenie, Dokumenty, Hobby, Nezaradené), vyhľadávanie nahrávok podľa názvu bez diakritiky a história naposledy pozeraných. Živé vysielanie je tu tiež k dispozícii ako bonus.</description>
+        <description lang="cs_CZ">Doplňkový prohlížeč DVR archivu pro Tvheadend, navržený jako společník k oficiálnímu klientovi pvr.hts. Zatímco pvr.hts řeší Živé vysílání, EPG a časovače v nativní PVR sekci Kodi, Tvheadend Archive se zaměřuje na to, co pvr.hts nedělá: procházení DVR archivu roztříděného do inteligentních kategorií a podžánrů (Filmy, Seriály, Sport, Zpravodajství, Show, Dětské, Hudba, Umění, Dokumenty, Hobby, Nezařazené), vyhledávání nahrávek podle názvu bez diakritiky a historie naposledy sledovaných. Živé vysílání je zde také k dispozici jako bonus.</description>
+        <platform>all</platform>
+        <license>GPL-3.0-or-later</license>
+        <source>https://jurajchudy.sk/</source>
+        <news>1.0.0 - First public release.
+
+Features:
+ - DVR archive browser grouped by smart categories and subgenres (Films, Series, Sports, News, Shows, Kids, Music, Arts, Docs, Hobby, Other). Series are auto-grouped by canonical title across episodes.
+ - Alternative archive view "By channel" → date → recording.
+ - Live TV with channel tags and "now playing" EPG.
+ - Search by recording title — diacritics-insensitive, word-prefix matching (e.g. "kom" finds "Komisař Rex"; "Kriminálka" does NOT match "na"). Two-phase navigation keeps results on screen after playback.
+ - Recently watched history — persistent across Kodi restarts, configurable cap, hidden when empty.
+ - "Test connection" diagnostic inside Settings.
+ - Full Slovak, Czech and English localization.
+ - Requires Kodi 19+ (Matrix) and a reachable Tvheadend HTTP server (port 9981 by default). Pairs well with pvr.hts for native PVR features.
+</news>
+        <assets>
+            <icon>icon.png</icon>
+        </assets>
+    </extension>
+</addon>
+<addon id="repository.andrebas.kodi"
+       name="Andrebas Kodi Repository"
+       version="1.0.0"
+       provider-name="Andrebas">
+    <extension point="xbmc.addon.repository" name="Andrebas Kodi Repository">
+        <dir minversion="19.0.0">
+            <info compressed="false">https://mikrotikexe.github.io/kodi-repo/addons.xml</info>
+            <checksum>https://mikrotikexe.github.io/kodi-repo/addons.xml.md5</checksum>
+            <datadir zip="true">https://mikrotikexe.github.io/kodi-repo/</datadir>
+            <hashes>true</hashes>
+        </dir>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en_GB">Andrebas Kodi addons (Tvheadend Archive and more)</summary>
+        <description lang="en_GB">Repository hosting Kodi addons maintained by Andrebas. Currently includes Tvheadend Archive — a DVR archive browser companion to pvr.hts.</description>
+        <summary lang="sk_SK">Kodi doplnky od Andrebasa (Tvheadend Archive a ďalšie)</summary>
+        <description lang="sk_SK">Repozitár Kodi doplnkov spravovaných Andrebasom. Zatiaľ obsahuje Tvheadend Archive — prehliadač DVR archívu, ktorý dopĺňa pvr.hts.</description>
+        <summary lang="cs_CZ">Kodi doplňky od Andrebasa (Tvheadend Archive a další)</summary>
+        <description lang="cs_CZ">Repozitář Kodi doplňků spravovaných Andrebasem. Zatím obsahuje Tvheadend Archive — prohlížeč DVR archivu, který doplňuje pvr.hts.</description>
+        <platform>all</platform>
+        <license>GPL-2.0-or-later</license>
+        <source>https://github.com/MikrotikExe/kodi-repo</source>
+        <news>1.0.0 - Initial release. Hosts plugin.video.tvheadend.</news>
+        <assets>
+            <icon>icon.png</icon>
+        </assets>
+    </extension>
+</addon>
+</addons>

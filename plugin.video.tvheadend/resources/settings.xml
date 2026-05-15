@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings version="1">
+    <section id="plugin.video.tvheadend">
+        <category id="server" label="30100">
+            <group id="1">
+                <setting id="host" type="string" label="30101">
+                    <level>0</level>
+                    <default>127.0.0.1</default>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string"/>
+                </setting>
+                <setting id="port" type="integer" label="30102">
+                    <level>0</level>
+                    <default>9981</default>
+                    <constraints>
+                        <minimum>1</minimum>
+                        <maximum>65535</maximum>
+                    </constraints>
+                    <control type="edit" format="integer"/>
+                </setting>
+                <setting id="use_https" type="boolean" label="30103">
+                    <level>0</level>
+                    <default>false</default>
+                    <control type="toggle"/>
+                </setting>
+                <setting id="username" type="string" label="30104">
+                    <level>0</level>
+                    <default></default>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string"/>
+                </setting>
+                <setting id="password" type="string" label="30105">
+                    <level>0</level>
+                    <default></default>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string">
+                        <hidden>true</hidden>
+                    </control>
+                </setting>
+                <setting id="http_auth_mode" type="string" label="30106">
+                    <level>0</level>
+                    <default>auto</default>
+                    <constraints>
+                        <options>
+                            <option label="30150">auto</option>
+                            <option label="30151">digest</option>
+                            <option label="30152">basic</option>
+                            <option label="30153">none</option>
+                        </options>
+                    </constraints>
+                    <control type="list" format="string"/>
+                </setting>
+            </group>
+            <group id="2" label="30110">
+                <setting id="profile" type="string" label="30111">
+                    <level>0</level>
+                    <default>pass</default>
+                    <constraints>
+                        <options>
+                            <option>pass</option>
+                            <option>mpegts</option>
+                            <option>matroska</option>
+                            <option>htsp</option>
+                            <option>webtv-h264-aac-matroska</option>
+                            <option>webtv-h264-aac-mpegts</option>
+                        </options>
+                    </constraints>
+                    <control type="list" format="string"/>
+                </setting>
+                <setting id="loading_timeout" type="integer" label="30112">
+                    <level>0</level>
+                    <default>15</default>
+                    <constraints>
+                        <minimum>1</minimum>
+                        <maximum>120</maximum>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>true</popup>
+                    </control>
+                </setting>
+            </group>
+            <group id="3" label="30120">
+                <setting id="test_connection" type="action" label="30303">
+                    <level>0</level>
+                    <data>RunPlugin(plugin://plugin.video.tvheadend/?action=test_connection)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                </setting>
+            </group>
+        </category>
+        <category id="archive" label="30200">
+            <group id="1">
+                <setting id="dvr_limit" type="integer" label="30201">
+                    <level>0</level>
+                    <default>0</default>
+                    <constraints>
+                        <minimum>0</minimum>
+                        <maximum>10000</maximum>
+                    </constraints>
+                    <control type="edit" format="integer"/>
+                </setting>
+                <setting id="archive_days_limit" type="integer" label="30202">
+                    <level>0</level>
+                    <default>0</default>
+                    <constraints>
+                        <minimum>0</minimum>
+                        <maximum>365</maximum>
+                    </constraints>
+                    <control type="edit" format="integer"/>
+                </setting>
+            </group>
+            <group id="2" label="30210">
+                <setting id="history_enabled" type="boolean" label="30211">
+                    <level>0</level>
+                    <default>true</default>
+                    <control type="toggle"/>
+                </setting>
+                <setting id="history_limit" type="integer" label="30212">
+                    <level>0</level>
+                    <default>50</default>
+                    <constraints>
+                        <minimum>1</minimum>
+                        <maximum>500</maximum>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>true</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="enable" setting="history_enabled">true</dependency>
+                    </dependencies>
+                </setting>
+            </group>
+        </category>
+    </section>
+</settings>

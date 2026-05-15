@@ -1,0 +1,236 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Tvheadend Kodi Addon\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-13 00:00+0000\n"
+"PO-Revision-Date: 2026-05-13 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: English\n"
+"Language: en_GB\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# Settings: Server category
+msgctxt "#30100"
+msgid "Server"
+msgstr "Server"
+
+msgctxt "#30101"
+msgid "Server (IP/domain or URL)"
+msgstr "Server (IP/domain or URL)"
+
+msgctxt "#30102"
+msgid "Port"
+msgstr "Port"
+
+msgctxt "#30103"
+msgid "Use HTTPS"
+msgstr "Use HTTPS"
+
+msgctxt "#30104"
+msgid "Username"
+msgstr "Username"
+
+msgctxt "#30105"
+msgid "Password"
+msgstr "Password"
+
+msgctxt "#30106"
+msgid "HTTP authentication"
+msgstr "HTTP authentication"
+
+msgctxt "#30110"
+msgid "Streaming"
+msgstr "Streaming"
+
+msgctxt "#30111"
+msgid "TVH stream profile"
+msgstr "TVH stream profile"
+
+msgctxt "#30112"
+msgid "Timeout (seconds)"
+msgstr "Timeout (seconds)"
+
+# Diagnostics group inside Server settings
+msgctxt "#30120"
+msgid "Diagnostics"
+msgstr "Diagnostics"
+
+# HTTP auth options
+msgctxt "#30150"
+msgid "Auto"
+msgstr "Auto"
+
+msgctxt "#30151"
+msgid "Digest"
+msgstr "Digest"
+
+msgctxt "#30152"
+msgid "Basic"
+msgstr "Basic"
+
+msgctxt "#30153"
+msgid "None"
+msgstr "None"
+
+# Settings: Archive category
+msgctxt "#30200"
+msgid "Archive"
+msgstr "Archive"
+
+msgctxt "#30201"
+msgid "Archive: max items from DVR (0 = no limit)"
+msgstr "Archive: max items from DVR (0 = no limit)"
+
+msgctxt "#30202"
+msgid "Archive: max number of days (0 = no limit)"
+msgstr "Archive: max number of days (0 = no limit)"
+
+# Settings: History group
+msgctxt "#30210"
+msgid "History"
+msgstr "History"
+
+msgctxt "#30211"
+msgid "Enable \"Recently watched\""
+msgstr "Enable \"Recently watched\""
+
+msgctxt "#30212"
+msgid "Max items in history"
+msgstr "Max items in history"
+
+# Main menu
+msgctxt "#30300"
+msgid "Live TV"
+msgstr "Live TV"
+
+msgctxt "#30301"
+msgid "Archive"
+msgstr "Archive"
+
+msgctxt "#30302"
+msgid "Settings"
+msgstr "Settings"
+
+msgctxt "#30303"
+msgid "Test connection"
+msgstr "Test connection"
+
+# Main menu – history & search
+msgctxt "#30320"
+msgid "Recently watched"
+msgstr "Recently watched"
+
+msgctxt "#30321"
+msgid "Search"
+msgstr "Search"
+
+# Live TV
+msgctxt "#30310"
+msgid "All channels"
+msgstr "All channels"
+
+# Notifications / dialogs
+msgctxt "#30400"
+msgid "Tvheadend"
+msgstr "Tvheadend"
+
+msgctxt "#30401"
+msgid "Missing server configuration. Open Settings."
+msgstr "Missing server configuration. Open Settings."
+
+msgctxt "#30402"
+msgid "Connection OK"
+msgstr "Connection OK"
+
+msgctxt "#30403"
+msgid "Connection failed"
+msgstr "Connection failed"
+
+msgctxt "#30404"
+msgid "No channels found"
+msgstr "No channels found"
+
+# Search / History dialogs
+msgctxt "#30550"
+msgid "Search recordings"
+msgstr "Search recordings"
+
+msgctxt "#30551"
+msgid "No matches"
+msgstr "No matches"
+
+msgctxt "#30552"
+msgid "History is empty"
+msgstr "History is empty"
+
+msgctxt "#30553"
+msgid "Clear history"
+msgstr "Clear history"
+
+msgctxt "#30554"
+msgid "Really clear all watched history?"
+msgstr "Really clear all watched history?"
+
+msgctxt "#30555"
+msgid "History cleared"
+msgstr "History cleared"
+
+msgctxt "#30556"
+msgid "Search results"
+msgstr "Search results"
+
+# Categories (top-level)
+msgctxt "#30500"
+msgid "Films"
+msgstr "Films"
+
+msgctxt "#30501"
+msgid "Series"
+msgstr "Series"
+
+msgctxt "#30502"
+msgid "Sport"
+msgstr "Sport"
+
+msgctxt "#30503"
+msgid "News"
+msgstr "News"
+
+msgctxt "#30504"
+msgid "Shows"
+msgstr "Shows"
+
+msgctxt "#30505"
+msgid "Kids"
+msgstr "Kids"
+
+msgctxt "#30506"
+msgid "Music"
+msgstr "Music"
+
+msgctxt "#30507"
+msgid "Arts / Culture"
+msgstr "Arts / Culture"
+
+msgctxt "#30508"
+msgid "Documentaries / Educational"
+msgstr "Documentaries / Educational"
+
+msgctxt "#30509"
+msgid "Leisure / Hobby"
+msgstr "Leisure / Hobby"
+
+msgctxt "#30510"
+msgid "Other"
+msgstr "Other"
+
+# DVR labels
+msgctxt "#30530"
+msgid "Recording"
+msgstr "Recording"
+
+msgctxt "#30531"
+msgid "days"
+msgstr "days"
