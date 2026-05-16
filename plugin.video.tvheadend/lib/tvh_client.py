@@ -101,6 +101,9 @@ class Tvheadend:
         # Thread-safe auth handling – pozri komentár v originále
         self._req_lock = threading.RLock()
         self._auth_sig: tuple | None = None
+        # Pri mode="auto" si pamätáme aktuálne použitú metódu (basic/digest).
+        # Začíname Basic (default v TVH 4.x), po 401 prepneme na Digest.
+        self._auto_effective: str = "basic"
 
     # ------------------------------------------------------------------
     # Helpers
@@ -167,8 +170,15 @@ class Tvheadend:
         if not user or mode == "none":
             sess.auth = None
             return
-        if mode in ("digest", "auto"):
+        if mode == "digest":
             sess.auth = HTTPDigestAuth(user, pwd)
+        elif mode == "auto":
+            # TVH 4.x defaultne používa Basic. Pri prvom 401 v api_get
+            # prepneme _auto_effective na "digest" a sess.auth sa preapliuje.
+            if self._auto_effective == "digest":
+                sess.auth = HTTPDigestAuth(user, pwd)
+            else:
+                sess.auth = (user, pwd)
         else:
             sess.auth = (user, pwd)
 
@@ -214,6 +224,18 @@ class Tvheadend:
                         raise AddonErrorException(
                             self._("Tvheadend returned invalid JSON.")
                         )
+                # Auto-detect: ak sme v "auto" móde a server vrátil 401 s Basic,
+                # prepneme na Digest a retrynieme (TVH inštalácie s Digest auth
+                # nastaveným cez reverse proxy / nginx, alebo staršie verzie).
+                if status == 401:
+                    sig = self._auth_signature()
+                    if sig and sig[2] == "auto" and self._auto_effective == "basic":
+                        self._auto_effective = "digest"
+                        with self._req_lock:
+                            self._apply_auth_to_session(force=True)
+                        last_err = Exception("HTTP 401 — switching auth to digest and retrying")
+                        # Retry immediately bez backoff
+                        continue
                 if status not in self._RETRY_STATUS_CODES:
                     try:
                         resp.raise_for_status()

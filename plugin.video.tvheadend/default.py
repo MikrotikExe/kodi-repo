@@ -157,6 +157,44 @@ def end_directory(succeeded: bool = True, content_type: str = "videos") -> None:
     xbmcplugin.endOfDirectory(_HANDLE, succeeded=succeeded)
 
 
+def set_category(*parts: str) -> None:
+    """Set Kodi plugin category header — zobrazí breadcrumb cestu typu
+    'Filmy / Akčné' alebo 'Archív podľa kanálu / Markíza' v hlavičke listu.
+    Volá sa na začiatku handlera (idealne pred budovaním list-u).
+    Prázdne/None časti sa skipnú."""
+    label = " / ".join(p for p in parts if p)
+    if not label:
+        return
+    try:
+        xbmcplugin.setPluginCategory(_HANDLE, label)
+    except Exception:
+        pass
+
+
+def _cat_label_for_id(cat_id: str) -> str:
+    """Vráti lokalizovaný label pre top-level kategóriu (Filmy, Seriály, ...).
+    Wrapper okolo existujúceho _cat_label ktorý dohľadáva fallback z
+    CAT_LABELS_ORDER namiesto explicitného odovzdania."""
+    if not cat_id:
+        return ""
+    fallback = ""
+    for cid, label in classifier.CAT_LABELS_ORDER:
+        if cid == cat_id:
+            fallback = label
+            break
+    return _cat_label(cat_id, fallback)
+
+
+def _subcat_label(labels_tuple, sub_id: str) -> str:
+    """Vráti čitateľný label pre podžáner v rámci kategórie."""
+    if not sub_id:
+        return ""
+    for sid, label in labels_tuple:
+        if sid == sub_id:
+            return label
+    return sub_id
+
+
 # --------------------------------------------------------------------------
 # TVH klient singleton
 # --------------------------------------------------------------------------
@@ -177,6 +215,25 @@ def require_configured() -> bool:
         notify(tr(30401), icon=xbmcgui.NOTIFICATION_WARNING)
         return False
     return True
+
+
+def _safe_int(value, default: int = 0) -> int:
+    """Bezpečná konverzia hocijakej hodnoty na int.
+
+    TVH HTTP API niekedy vracia 'number' polia ako string ('21'), niekedy
+    ako float-string ('21.0'), niekedy s neviditeľnými unicode znakmi alebo
+    ako None/''. Volania ako `int(value)` alebo porovnania `value > 0` na
+    nepredvídateľnom type tichú failnú. Tento helper to rieši bullet-proof
+    cez float pretvorenie + try/except.
+    """
+    if value is None or value == '':
+        return default
+    if isinstance(value, bool):  # bool je tiež int v Pythone — neprejaviť
+        return default
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
 
 
 def _settings_int(key: str, default: int = 0) -> int:
@@ -398,6 +455,7 @@ def handler_live_root() -> None:
         end_directory(False)
         return
 
+    set_category(tr(30300))  # "Live TV"
     try:
         tags = tvh().get_tags() or []
     except (AddonErrorException, Exception) as e:
@@ -406,7 +464,7 @@ def handler_live_root() -> None:
         end_directory(False)
         return
 
-    add_dir(tr(30310), build_url(action="live_channels", tag=""))
+    add_dir(tr(30310), build_url(action="live_channels", tag="", tag_name=tr(30310)))
 
     sorted_tags = sorted(
         (t for t in tags if t.get("name")),
@@ -419,7 +477,7 @@ def handler_live_root() -> None:
             continue
         icon_url = tag.get("icon_public_url") or ""
         icon = tvh().make_icon_url(icon_url) if icon_url else None
-        add_dir(name, build_url(action="live_channels", tag=uuid), icon=icon)
+        add_dir(name, build_url(action="live_channels", tag=uuid, tag_name=name), icon=icon)
 
     end_directory()
 
@@ -430,6 +488,8 @@ def handler_live_channels(args: dict) -> None:
         return
 
     tag_uuid = args.get("tag", "") or ""
+    tag_name = args.get("tag_name", "") or ""
+    set_category(tr(30300), tag_name)  # "Live TV / <tag>"
     try:
         channels = tvh().get_channels_by_tag(tag_uuid) if tag_uuid else tvh().get_channels()
     except (AddonErrorException, Exception) as e:
@@ -467,8 +527,8 @@ def handler_live_channels(args: dict) -> None:
         if not uuid:
             continue
         name = ch.get("name") or "?"
-        lcn = ch.get("number")
-        label = "%s. %s" % (int(lcn), name) if lcn and lcn > 0 else name
+        lcn = _safe_int(ch.get("number"), 0)
+        label = "%s. %s" % (lcn, name) if lcn > 0 else name
 
         ev = now_epg.get(uuid) or {}
         ev_title = ev.get("title") or ""
@@ -533,6 +593,7 @@ def handler_archive_by_channel() -> None:
         end_directory(False)
         return
 
+    set_category(tr(30301))  # "Archive"
     try:
         entries = classifier.get_dvr_finished_cached(tvh())
         channels = tvh().get_channels()
@@ -549,7 +610,7 @@ def handler_archive_by_channel() -> None:
             continue
         ch_info[cid] = {
             'name':   ch.get('name') or cid,
-            'number': int(ch.get('number') or 0),
+            'number': _safe_int(ch.get('number'), 0),
             'icon':   tvh().make_icon_url(ch.get('icon_public_url') or ''),
         }
 
@@ -592,7 +653,7 @@ def handler_archive_by_channel() -> None:
         label = name
         if day_cnt > 0:
             label = '%s - %d %s' % (label, day_cnt, days_label)
-        add_dir(label, build_url(action="archive_dates", channel=cid),
+        add_dir(label, build_url(action="archive_dates", channel=cid, channel_name=name),
                 icon=icon, info={"title": name})
 
     end_directory()
@@ -604,6 +665,9 @@ def handler_archive_dates(args: dict) -> None:
         return
 
     channel_id = args.get("channel") or ""
+    channel_name = args.get("channel_name") or channel_id
+    set_category(tr(30301), channel_name)
+
     if not channel_id:
         end_directory(False)
         return
@@ -628,7 +692,8 @@ def handler_archive_dates(args: dict) -> None:
     for d in sorted(by_date.keys(), reverse=True):
         cnt = len(by_date[d])
         label = '%s (%d)' % (d, cnt)
-        add_dir(label, build_url(action="archive_day", channel=channel_id, date=d))
+        add_dir(label, build_url(action="archive_day", channel=channel_id,
+                                  channel_name=channel_name, date=d))
 
     end_directory()
 
@@ -640,6 +705,8 @@ def handler_archive_day(args: dict) -> None:
 
     channel_id = args.get("channel") or ""
     date = args.get("date") or ""
+    channel_name = args.get("channel_name") or channel_id
+    set_category(tr(30301), channel_name, date)
     if not (channel_id and date):
         end_directory(False)
         return
@@ -689,6 +756,8 @@ def handler_archive_category(args: dict) -> None:
         return
 
     cat_id = args.get("cat") or ""
+    cat_label = _cat_label_for_id(cat_id)
+    set_category(cat_label)
     try:
         by_top, by_subcat, _counts, _series_by, series_subcat_titles = _load_classified()
     except Exception as e:
@@ -735,6 +804,8 @@ def handler_archive_movie_subgenre(args: dict) -> None:
         end_directory(False)
         return
     sub_id = args.get("sub") or ""
+    set_category(_cat_label_for_id(classifier.CAT_FILM),
+                 _subcat_label(classifier.MOVIE_SUBCAT_LABELS, sub_id))
     try:
         _by_top, by_subcat, _, _, _ = _load_classified()
     except Exception as e:
@@ -752,6 +823,10 @@ def handler_archive_generic_subgenre(args: dict) -> None:
         return
     cat_id = args.get("cat") or ""
     sub_id = args.get("sub") or ""
+    # Pre breadcrumb potrebujeme labels_tuple z registry pre danú kategóriu
+    cfg = classifier.SUBCAT_REGISTRY.get(cat_id)
+    sub_lbl = _subcat_label(cfg[0], sub_id) if cfg else sub_id
+    set_category(_cat_label_for_id(cat_id), sub_lbl)
     try:
         _by_top, by_subcat, _, _, _ = _load_classified()
     except Exception as e:
@@ -768,6 +843,8 @@ def handler_archive_series_subgenre(args: dict) -> None:
         end_directory(False)
         return
     sub_id = args.get("sub") or ""
+    set_category(_cat_label_for_id(classifier.CAT_SERIAL),
+                 _subcat_label(classifier.MOVIE_SUBCAT_LABELS, sub_id))
     try:
         _, _, _, series_by_canonical, series_subcat_titles = _load_classified()
     except Exception as e:
@@ -799,6 +876,7 @@ def handler_archive_series(args: dict) -> None:
         end_directory(False)
         return
     series_title = args.get("title") or ""
+    set_category(_cat_label_for_id(classifier.CAT_SERIAL), series_title)
     try:
         _, _, _, series_by_canonical, _ = _load_classified()
     except Exception as e:
@@ -891,6 +969,7 @@ def handler_play_dvr(args: dict) -> None:
 # --------------------------------------------------------------------------
 def handler_recent(args: dict) -> None:
     """Zoznam naposledy prehraných DVR nahrávok (perzistované v profile)."""
+    set_category(tr(30320))  # "Recently watched"
     entries = history.load()
     if not entries:
         notify(tr(30552))
@@ -1068,6 +1147,7 @@ def handler_search(args: dict) -> None:
 
     # Fáza 2 — máme `q`, vykreslíme výsledky
     query = query_arg.strip()
+    set_category(tr(30321), query)  # "Search / <query>"
     if not query:
         end_directory(succeeded=True, content_type="")
         return
@@ -1184,7 +1264,9 @@ def route() -> None:
     try:
         handler(args)
     except Exception as e:
-        log("Handler %r crashed: %s" % (action, e), xbmc.LOGERROR)
+        import traceback
+        tb = traceback.format_exc()
+        log("Handler %r crashed: %s\n%s" % (action, e, tb), xbmc.LOGERROR)
         notify(str(e), icon=xbmcgui.NOTIFICATION_ERROR)
         try:
             end_directory(False)
