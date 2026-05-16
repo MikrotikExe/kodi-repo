@@ -2,7 +2,7 @@
 <addons>
 <addon id="plugin.video.tvheadend"
        name="Tvheadend Archive"
-       version="1.0.4"
+       version="1.0.5"
        provider-name="Andrebas">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
@@ -21,7 +21,12 @@
         <platform>all</platform>
         <license>GPL-3.0-or-later</license>
         <source>https://jurajchudy.sk/</source>
-        <news>1.0.4 - Classifier accuracy and diagnostics.
+        <news>1.0.5 - Sci-fi/fantasy franchise title override.
+
+ - Improved: well-known sci-fi and fantasy franchise titles (Duna, Pán prstenů, Star Wars, Star Trek, Matrix, Avatar, Terminator, Blade Runner, Alien, Predator, Avengers, Transformers, Spider-Man, X-Men, Hunger Games, Maze Runner, Jurassic, Interstellar, Inception, Tenet, Mad Max, Godzilla, Batman/Dark Knight, Superman, Deadpool, Harry Potter, Hobbit and more) are now classified as Sci-fi/Fantasy regardless of what the description says. Broadcasters often describe these films as "war revenge plot" or "family drama" without mentioning the genre at all — Dune: Part Two's official description does not contain a single sci-fi keyword and was being routed to Historical/War on the basis of the word "válečnou" (waging war). Title-based override now beats both keyword scan and channel sub-genre hints.
+ - Patterns are anchored to title position (start-of-title or after colon) for ambiguous names like Batman, Tenet, Gravity, Iron Man, Superman, Avatar, Ender — preventing false positives on documentaries that happen to contain these words (e.g. "EMPIRES Batman Aztécké říše" — a documentary about Aztec mythology where "Batman" is the bat-god, not DC Batman — correctly remains as Movie/Other).
+
+1.0.4 - Classifier accuracy and diagnostics.
 
  - Improved: top-level category determination now trusts the DVB-SI Level 1 content_type from the broadcaster over the channel name hint. Channel name was previously overpowering: cooking shows like "MasterChef Junior" on a children's channel went to "Children" even though DVB tagged them as Lifestyle/Hobby; classical concerts on the same channel went to "Children" instead of "Music"; sport channel news items went to "Sports" instead of "News". The new logic uses channel hints only for ambiguous content (content_type 0 = undefined, or 1 = general Movie/Drama, or 5 = Children) where a children's animated series channel really should override DVB. Validated on a 11,650-entry real-world TVH archive across two production servers: 18% of entries shift category, all toward better matches.
  - Added: Documentary channel hints. Broadcasters routinely mistag content on dedicated documentary channels — Discovery, Viasat (Explore/History/Nature/True Crime), National Geographic, Spektrum, Animal Planet, History Channel, BBC Earth, Love Nature, DocuBox, Crime + Investigation — as either Movie/Drama or News. On a 373-entry sample from two such channels, 50% had ct=2 (News) and 48% had ct=1 (Movie/Drama). The new doc channel hints override these mislabels and route the content to Documentaries where it belongs.
