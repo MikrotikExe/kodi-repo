@@ -329,7 +329,7 @@ _SPORT_KEYWORD_TO_SUBCAT = (
      _SP_NEWS),
     (re.compile(r'\b(hokej|hockey|nhl|iihf|khl|hokejov)'),
      _SP_HOKEJ),
-    (re.compile(r'\b(ufc|mma|oktagon|kickbox|k-1|judo|karate|wrestl|'
+    (re.compile(r'\b(ufc|mma|oktagon|pml|kickbox|k-1|judo|karate|wrestl|'
                 r'zapas|sumo|taekwon|grappling)'),
      _SP_BOJOVE),
     (re.compile(r'\bbox(er|ing|u|y)?\b'),
@@ -1190,7 +1190,7 @@ def _is_series_entry(entry):
 _FALLBACK_KEYWORD_TO_TOP = (
     (re.compile(r'\b(futbal|hokej|tenis|golf|formula|f1|oktagon|liga|'
                 r'majstrov|olympi|rally|cyklist|atletik|box|wrestlin|'
-                r'biatlon|lyzovan|sjazd)'),
+                r'biatlon|lyzovan|sjazd|mma|ufc|pml)'),
      CAT_SPORT),
     (re.compile(r'\b(spravodajstvo|sprav[yi]|udalosti|aktualn|reporter|noviny\s+tv|'
                 r'tv\s+noviny|pocasi|uvodnik)'),

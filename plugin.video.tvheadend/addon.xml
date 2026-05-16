@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.tvheadend"
        name="Tvheadend Archive"
-       version="1.0.7"
+       version="1.0.8"
        provider-name="Andrebas">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
@@ -20,7 +20,12 @@
         <platform>all</platform>
         <license>GPL-3.0-or-later</license>
         <source>https://jurajchudy.sk/</source>
-        <news>1.0.7 - Fewer entries in Other.
+        <news>1.0.8 - Minor classifier refinements after 1.0.7 deploy.
+
+ - Extended Sport top-level keyword fallback and Sport sub-genre keyword pattern to recognise additional numbered fight event series alongside ufc/mma/oktagon — events that broadcasters tag as ct=0 with no channel hint now route to Sport / Combat sports instead of Other.
+ - Title corpus expanded by a couple of titles that production archives surfaced as still falling into Other — including "Modrá laguna" (1980 original) and "Blue Lagoon" alongside the 1.0.7-added "Návrat do Modré laguny" sequel, all classified as Romance.
+
+1.0.7 - Fewer entries in Other.
 
  - Extended keyword fallback for ct=0 (DVB-untagged) recordings. New Show patterns catch sk/cz reality formats (Zámena manželiek, Nebezpečné vztahy live, Jak to dopadlo, Intim s Heidi Janků, Prima Pauza: Partička, Spřízněné duše, V siedmom nebi, Extrémne prípady, Dokonalý šéf, Utajený šéf, Top Gear, MasterChef, Babicovy tipy, Najlepšie virálne videá, Ano šéfe!). New Children patterns catch Byl jednou jeden rok, Fidlibumove pokusy, Zázračný miniateliér, Trpaslíci, Labková patrola. New Hobby patterns catch home/garden/design programmes (Nové bývanie, Nová záhrada, Nové bývanie - dizajn, Jak se staví sen).
  - Added: ct=0 entries that hit the keyword fallback's Other bucket but whose title is in the title corpus are now promoted to Film with the corpus-derived sub-genre. Fixes movies like "Návrat do Modré laguny" (broadcaster tagged ct=0 with no channel hint) — previously routed to Other, now correctly Film/Romance.

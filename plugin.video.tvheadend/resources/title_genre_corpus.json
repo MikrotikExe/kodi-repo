@@ -3,7 +3,7 @@
     "version": 1,
     "generated_at": "2026-05-16T18:50:41Z",
     "source": "hand-curated: popular sk/cs/international titles + analysis of production TVH archives",
-    "unique_titles": 1943,
+    "unique_titles": 1945,
     "subcat_codes": {
       "ak": "mv_akcny",
       "ko": "mv_komedia",
@@ -1961,6 +1961,8 @@
     "projekt a 2": "ak",
     "jdi na to": "ak",
     "obri na mori/souboj titanu": "sf",
-    "navrat do modre laguny": "ro"
+    "navrat do modre laguny": "ro",
+    "modra laguna": "ro",
+    "blue lagoon": "ro"
   }
 }
