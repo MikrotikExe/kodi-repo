@@ -58,14 +58,15 @@ def zip_addon(addon_dir: Path, out_zip: Path) -> None:
     out_zip.parent.mkdir(parents=True, exist_ok=True)
     addon_id = addon_dir.name
 
-    # Vyčistiť všetky staré verzie tohto addonu (<addon_id>-X.Y.Z.zip)
-    for old in out_zip.parent.glob(f"{addon_id}-*.zip"):
-        if old != out_zip:
-            try:
-                old.unlink()
-                print(f"    cleaned: {old.name}")
-            except OSError as e:
-                print(f"    WARN: could not remove {old.name}: {e}")
+    # Vyčistiť všetky staré verzie tohto addonu (<addon_id>-X.Y.Z.zip + .md5)
+    for pattern in (f"{addon_id}-*.zip", f"{addon_id}-*.zip.md5"):
+        for old in out_zip.parent.glob(pattern):
+            if old != out_zip:
+                try:
+                    old.unlink()
+                    print(f"    cleaned: {old.name}")
+                except OSError as e:
+                    print(f"    WARN: could not remove {old.name}: {e}")
 
     if out_zip.exists():
         out_zip.unlink()
@@ -97,6 +98,11 @@ def build_docs(addons: list[Path]) -> None:
         # 1. ZIP do docs/<id>/<id>-<version>.zip
         zip_target = DOCS / addon_id / f"{addon_id}-{version}.zip"
         zip_addon(addon_dir, zip_target)
+
+        # 1b. Per-ZIP MD5 — Kodi to pýta keď má repo <hashes>true</hashes>
+        zip_md5 = hashlib.md5(zip_target.read_bytes()).hexdigest()
+        (zip_target.parent / f"{zip_target.name}.md5").write_text(zip_md5 + "\n",
+                                                                   encoding="utf-8")
 
         # 2. Kopírujeme addon.xml a icon.png vedľa ZIP-u (Kodi to pýta)
         shutil.copy(addon_dir / "addon.xml", DOCS / addon_id / "addon.xml")
