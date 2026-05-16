@@ -21,6 +21,8 @@ bez podžánrov (_CAT_INE).
 
 from __future__ import annotations
 
+import json
+import os
 import re
 import time
 import unicodedata
@@ -889,9 +891,129 @@ _TITLE_SCIFI_PATTERNS = (
 )
 
 
+# --------------------------------------------------------------------------
+# v1.0.6: Title corpus
+# --------------------------------------------------------------------------
+# Statický corpus filmov a seriálov v každom žánri + lokalizované sk/cs
+# preklady. Klasifikátor sa pýta corpus-u PRED keyword scan-om — title-based
+# match je spoľahlivejší ako "drama" keyword v opise.
+#
+# Corpus súbor: resources/title_genre_corpus.json relatívne k addon root.
+# Lazy načítanie pri prvom volaní _corpus_lookup. Bez I/O ak corpus chýba
+# (graceful fallback, len log warning).
+#
+# Shipped corpus je hand-curated z populárnych slovenských, českých a
+# medzinárodných titulov plus analýza dvoch reálnych TVH archívov. Refresh
+# sa robí priamo úpravou JSON-u v resources/title_genre_corpus.json.
+_CORPUS_CODE_TO_SUBCAT = {
+    'ak': _MV_AKCNY,
+    'ko': _MV_KOMEDIA,
+    'kr': _MV_KRIMI,
+    'dr': _MV_DRAMA,
+    'sf': _MV_SCIFI,
+    'ro': _MV_ROMANTIKA,
+    'ho': _MV_HOROR,
+    'do': _MV_DOBRODR,
+    'an': _MV_ANIMAK,
+    'hi': _MV_HISTORICKY,
+    'we': _MV_WESTERN,
+}
+
+_CORPUS_STATE = {
+    'loaded': False,
+    'titles': {},    # normalized_title → subcat constant
+    'load_error': None,
+    'meta': None,
+}
+
+
+def _corpus_path():
+    """Vráti absolútnu cestu k corpus JSON súboru."""
+    # classifier.py je v plugin.video.tvheadend/lib/, corpus je v
+    # plugin.video.tvheadend/resources/.
+    here = os.path.dirname(os.path.abspath(__file__))
+    addon_root = os.path.dirname(here)
+    return os.path.join(addon_root, 'resources', 'title_genre_corpus.json')
+
+
+def _load_corpus_if_needed():
+    """Lazy načítanie corpus-u. Idempotentné — volá sa pred každým lookup-om."""
+    if _CORPUS_STATE['loaded']:
+        return
+    _CORPUS_STATE['loaded'] = True  # set early — jeden pokus o load, no retry loop
+    path = _corpus_path()
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        _CORPUS_STATE['load_error'] = 'corpus file not found ({})'.format(path)
+        return
+    except (OSError, ValueError) as e:
+        _CORPUS_STATE['load_error'] = 'corpus load failed: {}'.format(e)
+        return
+
+    raw_titles = (data.get('titles') if isinstance(data, dict) else None) or {}
+    out = {}
+    for k, code in raw_titles.items():
+        sub = _CORPUS_CODE_TO_SUBCAT.get(code)
+        if sub is None or not isinstance(k, str):
+            continue
+        # k je už pre-normalizované pri builde, ale strážny rebound:
+        if k:
+            out[k] = sub
+    _CORPUS_STATE['titles'] = out
+    _CORPUS_STATE['meta'] = data.get('_meta') if isinstance(data, dict) else None
+
+    if _xbmc_log is not None and out:
+        try:
+            n = len(out)
+            _xbmc_log('[classifier] title corpus loaded: {} entries'.format(n), 1)
+        except Exception:
+            pass
+
+
+# Regex na odstránenie "(YYYY)" suffixu — corpus tituly tento suffix nemajú,
+# DVR entry-tituly tiež zriedka, ale niektoré broadcaster-y áno (napr.
+# "Halloween (1978)"). Pre lookup ho zhodíme rovnako ako pri normalizácii
+# pri ručnej tvorbe corpusu.
+_TITLE_YEAR_SUFFIX = re.compile(r'\s*\(\s*(?:19|20)\d{2}\s*\)\s*$')
+
+
+def _canonical_title_for_corpus(title):
+    """Normalizuje title pre corpus lookup. Musí ladiť s normalizáciou
+    použitou pri tvorbe corpus JSON-u."""
+    if not title:
+        return ''
+    # Strip tech markers (HD, AD, DD5.1, ...)
+    t = _strip_tech_markers(title)
+    # Strip episode suffix "(12)" alebo "(N)" (rok 1900-2099 sa nemení)
+    t = series_canonical_title(t)
+    # Strip rok suffix "(1999)"
+    t = _TITLE_YEAR_SUFFIX.sub('', t).strip()
+    return _strip_accents_lower(t)
+
+
+def _corpus_subgenre_match(entry):
+    """Vráti subcat constant ak title match-ne v corpuse, inak None."""
+    _load_corpus_if_needed()
+    titles = _CORPUS_STATE['titles']
+    if not titles:
+        return None
+    title = entry.get('disp_title') or ''
+    key = _canonical_title_for_corpus(title)
+    if not key:
+        return None
+    return titles.get(key)
+
+
 def _movie_subgenre(entry):
-    """Sub-kategória pre film/seriál (DVB genre, potom title franchise override,
-    potom keyword scan)."""
+    """Sub-kategória pre film/seriál (DVB genre → title franchise override →
+    keyword scan).
+
+    Pozn.: title corpus match (v1.0.6) sa robí o úroveň vyššie v
+    classify_dvr_entry, aby corpus prevážil channel subgenre hint. Tu je
+    len DVB explicit genre + franchise scifi + keyword scan.
+    """
     for g in (entry.get('genre') or []):
         try:
             g = int(g)
@@ -1169,12 +1291,22 @@ def classify_dvr_entry(entry):
             sub = _MV_SCIFI
             sub_reason = 'title franchise override (sci-fi/fantasy)'
         else:
-            sub = _channel_subgenre_hint(entry)
-            if sub:
-                sub_reason = 'channel hint'
+            # v1.0.6: title corpus — exact-title match. Vyhráva pred
+            # channel hint-om aj DVB+keyword fallbackom — známy titul je
+            # silnejší signál ako broadcaster-channel kategória, ktorá je
+            # coarse-grained. Napr. "Drive" (krimi/thriller) na "Nova Action"
+            # nech zostane v krimi, nie action.
+            corpus_sub = _corpus_subgenre_match(entry)
+            if corpus_sub:
+                sub = corpus_sub
+                sub_reason = 'title corpus match'
             else:
-                sub = _movie_subgenre(entry)
-                sub_reason = 'movie_subgenre (DVB/keyword)'
+                sub = _channel_subgenre_hint(entry)
+                if sub:
+                    sub_reason = 'channel hint'
+                else:
+                    sub = _movie_subgenre(entry)
+                    sub_reason = 'movie_subgenre (DVB/keyword)'
     else:
         cfg = SUBCAT_REGISTRY.get(top)
         if cfg and cfg[1] is not None:
