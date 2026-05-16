@@ -30,6 +30,52 @@ from .tvh_client import _SimpleTTLCache
 
 
 # --------------------------------------------------------------------------
+# Debug klasifikátora (v1.0.4)
+# --------------------------------------------------------------------------
+# Po aktivácii v settings ("classifier_debug") zapisuje každý DVR entry
+# do xbmc.log s detailmi prečo skončil v danej kategórii. Lets users (a aj
+# reviewerov fóra) hlásiť konkrétne misklasifikácie aj s context-om.
+_debug_enabled = False  # set externally via set_classifier_debug()
+_xbmc_log = None        # injectnuté lazy aby bol modul testovateľný mimo Kodi
+
+
+def set_classifier_debug(enabled, log_fn=None):
+    """Aktivuje/deaktivuje diagnostické logovanie klasifikátora.
+
+    Volá sa z plugin entry-pointu po načítaní setting hodnoty.
+    log_fn: callable(message, level) — typicky xbmc.log; ak None, použijeme print.
+    """
+    global _debug_enabled, _xbmc_log
+    _debug_enabled = bool(enabled)
+    _xbmc_log = log_fn
+
+
+def _dbg_log(entry, top, sub, reason):
+    """Zapíše jeden riadok do logu o klasifikácii entry."""
+    if not _debug_enabled:
+        return
+    title = (entry.get('disp_title') or '?')[:60]
+    channel = (entry.get('channelname') or '?')[:25]
+    ct = entry.get('content_type', 0)
+    genre = entry.get('genre') or []
+    msg = ('[classifier] "{title}" [{ch}] ct={ct} genre={g} '
+           '→ {top}/{sub} ({reason})').format(
+        title=title, ch=channel, ct=ct, g=genre,
+        top=top, sub=(sub or '-'), reason=reason)
+    if _xbmc_log is not None:
+        try:
+            _xbmc_log(msg, 1)  # xbmc.LOGINFO = 1
+            return
+        except Exception:
+            pass
+    # Fallback (mimo Kodi alebo log_fn fail)
+    try:
+        print(msg)
+    except Exception:
+        pass
+
+
+# --------------------------------------------------------------------------
 # Diakritika strip + lower
 # --------------------------------------------------------------------------
 def _strip_accents_lower(s: str) -> str:
@@ -185,29 +231,57 @@ _DVB_GENRE_TO_SUBCAT = {
     0x18: _MV_DRAMA,
 }
 
+# DVB-SI Level 2 (sub-nibble) mapovanie pre ostatné top kategórie (v1.0.4).
+# Iba 6.5% entries má `genre` pole, ale keď ho má, je to spoľahlivejší signál
+# ako keyword scan. Lookup je per-top-category, lebo rovnaký Level 2 nibble
+# znamená iné veci pre rôzne Level 1.
+_DVB_L2_BY_TOP = {}  # vyplnené nižšie po definícii subkategórií
+
+
+def _dvb_l2_subgenre(entry, top_cat):
+    """Vráti subgenre z DVB genre kódu (Level 1 = top nibble, Level 2 = bottom).
+    None ak entry nemá genre alebo nie je v mappingu."""
+    mapping = _DVB_L2_BY_TOP.get(top_cat)
+    if not mapping:
+        return None
+    for g in (entry.get('genre') or []):
+        try:
+            g = int(g)
+        except (ValueError, TypeError):
+            continue
+        sub = mapping.get(g)
+        if sub:
+            return sub
+    return None
+
 _KEYWORD_TO_SUBCAT = (
-    (re.compile(r'\b(detektiv|kriminal|krimi|thriller|vraz|policajn|vysetrov)'),
-     _MV_KRIMI),
+    # Specifické signály ako prvé (animované, sci-fi, western, vojnové) — tieto
+    # zriedka generujú false positives a sú prioritné nad generickými
     (re.compile(r'\b(sci-?fi|sci\.\s?fi|fantasy|vedeckofant|vesmirn|mimozem|robot|kybern)'),
      _MV_SCIFI),
-    (re.compile(r'\b(komedi|veselohra|humor|grotesk|sitcom)'),
-     _MV_KOMEDIA),
-    (re.compile(r'\b(horor|horror|desiv|hruz)'),
-     _MV_HOROR),
-    (re.compile(r'\b(romantick|milostn|romant)'),
-     _MV_ROMANTIKA),
-    (re.compile(r'\b(akcn|action|honic|prestrelk)'),
-     _MV_AKCNY),
+    (re.compile(r'\b(animovan|kreslen|animak|loutkov|cartoon|anime)'),
+     _MV_ANIMAK),
     (re.compile(r'\b(western|kovbo)'),
      _MV_WESTERN),
     (re.compile(r'\b(historick|valecn|vojensk|vojnov|histori)'),
      _MV_HISTORICKY),
+    (re.compile(r'\b(detektiv|kriminal|krimi|thriller|vraz|policajn|vysetrov)'),
+     _MV_KRIMI),
+    (re.compile(r'\b(komedi|veselohra|humor|grotesk|sitcom)'),
+     _MV_KOMEDIA),
+    (re.compile(r'\b(romantick|milostn|romant)'),
+     _MV_ROMANTIKA),
+    (re.compile(r'\b(akcn|action|honic|prestrelk)'),
+     _MV_AKCNY),
     (re.compile(r'\b(dobrodruz|adventur|exped|cestopis)'),
      _MV_DOBRODR),
-    (re.compile(r'\b(animovan|kreslen|animak|loutkov|cartoon|anime)'),
-     _MV_ANIMAK),
     (re.compile(r'\b(drama|dramati)'),
      _MV_DRAMA),
+    # Horor je na konci — keywordy 'desiv'/'hruz' sa často objavujú v opisoch
+    # vojnových filmov a thrillerov. Špecifickejšie kategórie (historicky,
+    # krimi, akcny) preto vyhrávajú prv než horor (v1.0.4).
+    (re.compile(r'\b(horor|horror|desiv|hruz)'),
+     _MV_HOROR),
 )
 
 
@@ -705,6 +779,65 @@ SUBCAT_REGISTRY = {
 }
 
 
+# DVB-SI Level 2 → subgenre mapovanie per top kategória (v1.0.4).
+# Naplnené tu, lebo potrebujeme aby subgenre konštanty boli už definované.
+_DVB_L2_BY_TOP.update({
+    CAT_SPORT: {
+        0x43: _SP_FUTBAL, 0x44: _SP_TENIS, 0x45: _SP_INE,  # team sports general
+        0x46: _SP_ATLETIKA, 0x47: _SP_MOTORSPORT, 0x48: _SP_VODNE,
+        0x49: _SP_ZIMNE, 0x4A: _SP_INE, 0x4B: _SP_BOJOVE,
+    },
+    CAT_SPRAVODAJSTVO: {
+        0x21: _NW_POCASIE,        # News/Weather
+        0x22: _NW_MAGAZINY,       # News magazine
+        0x23: _NW_HLAVNE,         # Documentary (news context)
+        0x24: _NW_POLITIKA,       # Discussion/Interview
+    },
+    CAT_SHOW: {
+        0x31: _SH_SUTAZ,          # Game show
+        0x32: _SH_ZABAVA,         # Variety show
+        0x33: _SH_TALK,           # Talk show
+    },
+    CAT_HUDBA: {
+        0x61: _MU_HITY,           # Rock/Pop
+        0x62: _MU_KLASIKA,        # Classical/Serious music
+        0x63: _MU_FOLK,           # Folk/Traditional
+        0x64: _MU_HITY,           # Jazz → Hity bucket
+        0x65: _MU_KLASIKA,        # Musical/Opera
+        0x66: _MU_KLASIKA,        # Ballet
+    },
+    CAT_UMENIE: {
+        0x71: _AR_DIVADLO,        # Performing arts
+        0x72: _AR_VYTVARNE,       # Fine arts
+        0x73: _AR_INE,            # Religion
+        0x74: _AR_INE,            # Popular culture
+        0x75: _AR_LITERATURA,     # Literature
+        0x76: _AR_FILM,           # Film/Cinema
+        0x77: _AR_FILM,           # Experimental film
+        0x78: _AR_INE,            # Broadcasting/Press
+    },
+    CAT_DOKUMENTY: {
+        0x91: _DC_PRIRODA,        # Nature/Animals/Environment
+        0x92: _DC_VEDA,           # Technology/Natural sciences
+        0x93: _DC_VEDA,           # Medicine/Psychology
+        0x94: _DC_CESTOPIS,       # Foreign countries/Expeditions
+        0x95: _DC_SPOLOCNOST,     # Social/Spiritual sciences
+        0x96: _DC_VEDA,           # Further education
+        0x97: _DC_INE,            # Languages
+    },
+    CAT_HOBBY: {
+        0xA1: _HB_CESTOVANIE,     # Tourism/Travel
+        0xA2: _HB_DIY,            # Handicraft
+        0xA3: _HB_AUTO,           # Motoring
+        0xA4: _HB_ZDRAVIE,        # Fitness/Health
+        0xA5: _HB_VARENIE,        # Cooking
+        0xA6: _HB_BYVANIE,        # Shopping/Advertisements
+        0xA7: _HB_ZAHRADA,        # Gardening
+    },
+})
+
+
+
 def _movie_subgenre(entry):
     """Sub-kategória pre film/seriál (DVB genre, potom keyword scan)."""
     for g in (entry.get('genre') or []):
@@ -715,13 +848,26 @@ def _movie_subgenre(entry):
         sub = _DVB_GENRE_TO_SUBCAT.get(g)
         if sub:
             return sub
-    text = ((entry.get('disp_title') or '') + ' ' +
-            (entry.get('disp_subtitle') or '') + ' ' +
-            (entry.get('disp_description') or ''))
+    title = entry.get('disp_title') or ''
+    subtitle = entry.get('disp_subtitle') or ''
+    description = entry.get('disp_description') or ''
+    text = (title + ' ' + subtitle + ' ' + description)
     if not text.strip():
         return _MV_INE
     text = _strip_accents_lower(text)
+    # v1.0.4: Horor je špeciálne striktný — TVH `disp_subtitle` často obsahuje
+    # dlhý plot description (broadcasters ho zneužívajú namiesto disp_description).
+    # Keywordy ako "desiv*", "hruz*" sa preto objavia v plot opisoch vojnových
+    # filmov a thrillerov ako "300" (subtitle: "desivej presile"). Horor preto
+    # vyžaduje match v *disp_title only*, nie v subtitle ani description.
+    # Reálne horror filmy majú typicky kľúčové slovo priamo v názve
+    # (napr. "Horor v lese", "Halloween", "Saw").
+    title_only = _strip_accents_lower(title)
     for pattern, subcat in _KEYWORD_TO_SUBCAT:
+        if subcat == _MV_HOROR:
+            if pattern.search(title_only):
+                return subcat
+            continue
         if pattern.search(text):
             return subcat
     return _MV_INE
@@ -762,6 +908,30 @@ _CHANNEL_TOP_HINTS = (
     ('mtv',         CAT_HUDBA),
     ('vh1',         CAT_HUDBA),
     ('mezzo',       CAT_HUDBA),
+    # Documentary channels (v1.0.4) — broadcasters často taggujú dokumenty
+    # zle ako Movie/Drama (ct=1) alebo News (ct=2), takže channel hint to
+    # opraví. Validované na 373 entries z 2 doc kanálov na server 2.
+    ('discovery',          CAT_DOKUMENTY),
+    ('national geographic', CAT_DOKUMENTY),
+    ('nat geo',            CAT_DOKUMENTY),
+    ('viasat history',     CAT_DOKUMENTY),
+    ('viasat explore',     CAT_DOKUMENTY),
+    ('viasat nature',      CAT_DOKUMENTY),
+    ('viasat true crime',  CAT_DOKUMENTY),
+    ('spektrum',           CAT_DOKUMENTY),
+    ('animal planet',      CAT_DOKUMENTY),
+    ('history channel',    CAT_DOKUMENTY),
+    ('history hd',         CAT_DOKUMENTY),
+    ('history 2',          CAT_DOKUMENTY),
+    ('cs history',         CAT_DOKUMENTY),
+    ('bbc earth',          CAT_DOKUMENTY),
+    ('bbc knowledge',      CAT_DOKUMENTY),
+    ('love nature',        CAT_DOKUMENTY),
+    ('docubox',            CAT_DOKUMENTY),
+    ('crime + investig',   CAT_DOKUMENTY),
+    ('crime & investig',   CAT_DOKUMENTY),
+    ('crime and investig', CAT_DOKUMENTY),
+    ('investigation discovery', CAT_DOKUMENTY),
     ('óčko',        CAT_HUDBA),
 )
 
@@ -831,8 +1001,12 @@ _FALLBACK_KEYWORD_TO_TOP = (
     (re.compile(r'\b(spravodajstvo|sprav[yi]|udalosti|aktualn|reporter|noviny\s+tv|'
                 r'tv\s+noviny|pocasi|uvodnik)'),
      CAT_SPRAVODAJSTVO),
-    (re.compile(r'\b(rozpravk|pohadk|detsk|pre\s+deti|pro\s+deti|kreslen|'
-                r'animovan|loutkov)'),
+    # Detské: iba explicitné detské markery, nie generické "detsk*"
+    # (slovo "detský/detská" sa objavuje v opisoch dospelácich shows ako
+    # "malú detskú izbu" v design show, "detský domov" v krimi reportáži atď.)
+    # v1.0.4: spresnené aby nepadali false positives z keyword "detsk" v opise.
+    (re.compile(r'\b(rozpravk|pohadk|pre\s+deti|pro\s+deti|pre\s+najmens|'
+                r'kreslen[ay]|animovan[ay]|loutkov[ay])'),
      CAT_DETSKE),
     (re.compile(r'\b(koncert|hudba|hudobn|hudebni|spevok|zpevak|spevak|'
                 r'piesn|pisni|pop\s|rock\s|metal\s|klasick)'),
@@ -863,33 +1037,79 @@ def _guess_top_category_from_keywords(entry):
 # --------------------------------------------------------------------------
 # Hlavné klasifikačné funkcie
 # --------------------------------------------------------------------------
-def _determine_top_cat(entry):
-    channel_top = _channel_top_hint(entry)
-    if channel_top in (CAT_DETSKE, CAT_SPORT, CAT_HUDBA, CAT_SPRAVODAJSTVO):
-        return channel_top
-    if _is_series_entry(entry):
-        return CAT_SERIAL
+def _determine_top_cat_with_reason(entry):
+    """Vráti (top_cat, reason_str). reason vysvetľuje rozhodovaciu cestu."""
     try:
         ct = int(entry.get('content_type') or 0)
     except Exception:
         ct = 0
+
+    channel_top = _channel_top_hint(entry)
+
+    # v1.0.4: Documentary channels (Discovery, Viasat, National Geographic, atď.)
+    # broadcasters často taggujú zle ako Movie/Drama (ct=1) alebo News (ct=2).
+    # Doc channel hint preto override-uje aj tieto explicitné DVB-SI kódy.
+    # Pre ct=3-10 doc hint NEvyhráva (Šport/Hudba/Šou explicitne tagované na
+    # dokumentárnom kanále je realisticky špeciálny program, nie dokument).
+    if channel_top == CAT_DOKUMENTY and ct in (0, 1, 2, 9):
+        return CAT_DOKUMENTY, f'doc channel hint (ct={ct} potentially mislabelled)'
+
+    if ct in (2, 3, 4, 6, 7, 8, 9, 10):
+        return _CT_TO_CAT_BASE[ct], f'ct={ct} explicit DVB-SI Level 1'
+
+    if channel_top in (CAT_DETSKE, CAT_SPORT, CAT_HUDBA, CAT_SPRAVODAJSTVO):
+        return channel_top, f'channel hint (ct={ct})'
+
+    if _is_series_entry(entry):
+        return CAT_SERIAL, f'series pattern detected (ct={ct})'
+
     if ct == 1:
-        return CAT_FILM
-    if ct in _CT_TO_CAT_BASE:
-        return _CT_TO_CAT_BASE[ct]
-    return _guess_top_category_from_keywords(entry)
+        return CAT_FILM, 'ct=1 Movie/Drama'
+    if ct == 5:
+        return CAT_DETSKE, 'ct=5 Children'
+
+    return _guess_top_category_from_keywords(entry), 'keyword fallback (ct=0)'
+
+
+def _determine_top_cat(entry):
+    """Určuje top-level kategóriu pre DVR entry.
+
+    Logika (od v1.0.4):
+    - content_type je explicitný DVB-SI Level 1 signál z broadcaster-a — má prednosť
+    - Pre špecifické content types (News=2, Show=3, Sport=4, Music=6, Arts=7,
+      Social=8, Edu=9, Hobby=10) NEpoužívame channel hint — DVB tag je
+      spoľahlivejší ako názov kanála.
+    - Pre content_type 1 (Movie/Drama), 5 (Children) alebo 0 (undefined):
+      channel hint a series detection majú zmysel.
+    """
+    return _determine_top_cat_with_reason(entry)[0]
 
 
 def classify_dvr_entry(entry):
     """Vráti (top_cat, sub_cat). sub_cat môže byť None."""
-    top = _determine_top_cat(entry)
+    top, top_reason = _determine_top_cat_with_reason(entry)
+    sub_reason = ''
     if top == CAT_FILM or top == CAT_SERIAL:
-        sub = _channel_subgenre_hint(entry) or _movie_subgenre(entry)
-        return top, sub
-    cfg = SUBCAT_REGISTRY.get(top)
-    if cfg and cfg[1] is not None:
-        return top, cfg[1](entry)
-    return top, None
+        sub = _channel_subgenre_hint(entry)
+        if sub:
+            sub_reason = 'channel hint'
+        else:
+            sub = _movie_subgenre(entry)
+            sub_reason = 'movie_subgenre (DVB/keyword)'
+    else:
+        cfg = SUBCAT_REGISTRY.get(top)
+        if cfg and cfg[1] is not None:
+            sub = _dvb_l2_subgenre(entry, top)
+            if sub is not None:
+                sub_reason = 'DVB L2 nibble'
+            else:
+                sub = cfg[1](entry)
+                sub_reason = 'keyword subgenre'
+        else:
+            sub = None
+            sub_reason = 'no subgenre'
+    _dbg_log(entry, top, sub, f'top: {top_reason}; sub: {sub_reason}')
+    return top, sub
 
 
 def _dedup_dvr_entries(entries):

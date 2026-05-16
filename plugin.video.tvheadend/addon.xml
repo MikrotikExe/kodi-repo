@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.tvheadend"
        name="Tvheadend Archive"
-       version="1.0.3"
+       version="1.0.4"
        provider-name="Andrebas">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
@@ -20,7 +20,15 @@
         <platform>all</platform>
         <license>GPL-3.0-or-later</license>
         <source>https://jurajchudy.sk/</source>
-        <news>1.0.3 - Bugfix release responding to first user feedback.
+        <news>1.0.4 - Classifier accuracy and diagnostics.
+
+ - Improved: top-level category determination now trusts the DVB-SI Level 1 content_type from the broadcaster over the channel name hint. Channel name was previously overpowering: cooking shows like "MasterChef Junior" on a children's channel went to "Children" even though DVB tagged them as Lifestyle/Hobby; classical concerts on the same channel went to "Children" instead of "Music"; sport channel news items went to "Sports" instead of "News". The new logic uses channel hints only for ambiguous content (content_type 0 = undefined, or 1 = general Movie/Drama, or 5 = Children) where a children's animated series channel really should override DVB. Validated on a 11,650-entry real-world TVH archive across two production servers: 18% of entries shift category, all toward better matches.
+ - Added: Documentary channel hints. Broadcasters routinely mistag content on dedicated documentary channels — Discovery, Viasat (Explore/History/Nature/True Crime), National Geographic, Spektrum, Animal Planet, History Channel, BBC Earth, Love Nature, DocuBox, Crime + Investigation — as either Movie/Drama or News. On a 373-entry sample from two such channels, 50% had ct=2 (News) and 48% had ct=1 (Movie/Drama). The new doc channel hints override these mislabels and route the content to Documentaries where it belongs.
+ - Added: DVB-SI Level 2 sub-genre nibble decoding. When a recording carries the full 8-bit DVB genre code (about 6.5% of entries) we now use the Level 2 nibble for the sub-category directly — e.g. 0x62 = Classical music, 0xA5 = Cooking, 0x43 = Football, 0x91 = Nature/Animals — instead of falling back to keyword scans. Adds explicit DVB mappings for Sports, News, Shows, Music, Arts, Documentary and Hobby sub-categories.
+ - Reduced: false-positive Horror classifications. The Horror keyword pattern previously matched description text like "hrůza války" (horror of war) and mislabelled war films as Horror; on one production archive this misfired on 18 entries. Now requires the horror keyword to appear in the title only (not subtitle or description), and other specific genres like Historical/War, Detective/Crime, Sci-fi, Animation come first in the keyword priority order. Bonus: the Detské keyword fallback no longer matches the generic word "detský" in a plot description, which had been misclassifying home renovation shows as Children's content.
+ - Added: optional "Classifier diagnostics" setting (off by default). When enabled, every recording classification is logged with full reasoning — content_type, DVB genre code, channel hint, which rule fired — letting users (and forum reviewers) pinpoint and report specific misclassifications without guesswork.
+
+1.0.3 - Bugfix release responding to first user feedback.
 
  - Fixed: "Archive by channel" view crashed with "invalid literal for int() with base 10" when TVH HTTP API returned channel numbers as strings or with non-standard formatting. Now uses safe int parsing that handles None, strings, floats, and unicode garbage.
  - Fixed: "Live TV" view crashed with "'>' not supported between instances of 'str' and 'int'" for channel groups containing channels with string-typed numbers.

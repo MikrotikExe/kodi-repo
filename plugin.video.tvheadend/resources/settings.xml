@@ -151,6 +151,13 @@
                     </control>
                 </setting>
             </group>
+            <group id="4" label="30420">
+                <setting id="classifier_debug" type="boolean" label="30421">
+                    <level>0</level>
+                    <default>false</default>
+                    <control type="toggle"/>
+                </setting>
+            </group>
         </category>
     </section>
 </settings>

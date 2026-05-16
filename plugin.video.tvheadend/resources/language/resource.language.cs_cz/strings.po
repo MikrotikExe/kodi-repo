@@ -177,6 +177,15 @@ msgctxt "#30415"
 msgid "Clear saved playback positions"
 msgstr "Smazat uložené pozice přehrávání"
 
+# Classifier diagnostics (v1.0.4)
+msgctxt "#30420"
+msgid "Classifier diagnostics"
+msgstr "Diagnostika klasifikátoru"
+
+msgctxt "#30421"
+msgid "Enable verbose classifier logging"
+msgstr "Podrobné logování klasifikátoru"
+
 # Search / History dialogs
 msgctxt "#30550"
 msgid "Search recordings"

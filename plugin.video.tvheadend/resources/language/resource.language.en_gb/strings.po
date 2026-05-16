@@ -177,6 +177,15 @@ msgctxt "#30415"
 msgid "Clear saved playback positions"
 msgstr "Clear saved playback positions"
 
+# Classifier diagnostics (v1.0.4)
+msgctxt "#30420"
+msgid "Classifier diagnostics"
+msgstr "Classifier diagnostics"
+
+msgctxt "#30421"
+msgid "Enable verbose classifier logging"
+msgstr "Enable verbose classifier logging"
+
 # Search / History dialogs
 msgctxt "#30550"
 msgid "Search recordings"

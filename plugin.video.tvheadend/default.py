@@ -1255,6 +1255,15 @@ _ROUTES = {
 
 def route() -> None:
     args = parse_args()
+    # v1.0.4: Wire-up classifier debug setting once per route invocation
+    try:
+        from lib import classifier as _classifier_mod
+        _classifier_mod.set_classifier_debug(
+            _settings_bool("classifier_debug", False),
+            log_fn=xbmc.log,
+        )
+    except Exception:
+        pass
     action = args.get("action") or "root"
     handler = _ROUTES.get(action)
     if handler is None:
