@@ -838,8 +838,60 @@ _DVB_L2_BY_TOP.update({
 
 
 
+# v1.0.4.1: Známé sci-fi/fantasy franchise tituly — keyword scan nezachytí,
+# lebo distributori opisujú plot (vojna, pomsta, drama), nie žáner. Title-based
+# override má prednosť pred keyword scan-om aj pred channel subgenre hint-om.
+# Hľadáme na začiatku stripped-lowercased názvu, aby sme nezachytávali falošne
+# (napr. "Duna" v "Dunaj, k vašim službám" — pattern \bduna\b s word boundary
+# za "duna" by nezachytil "dunaj").
+# Patterns sú anchored ku konkrétnym title-pozíciám (začiatok alebo s ":")
+# pre dvojzmyselné mená (Batman, Hulk, Thor, atď.) ktoré inak môžu byť
+# v opise dokumentov mythológie/histórie.
+_TITLE_SCIFI_PATTERNS = (
+    re.compile(r'^duna\b|\bduna\s*:|dune\b'),       # Duna / Dune
+    re.compile(r'\bstar\s*wars\b'),                # Star Wars
+    re.compile(r'\bhvezdne\s*valky\b'),            # Hvězdné války
+    re.compile(r'\bstar\s*trek\b'),                # Star Trek
+    re.compile(r'\bmatrix\b'),                     # Matrix
+    re.compile(r'^avatar\b|\bavatar\s*:'),         # Avatar
+    re.compile(r'\bterminator|\bterminat'),        # Terminátor
+    re.compile(r'\bblade\s*runner\b'),             # Blade Runner
+    re.compile(r'^pan\s+prsten|^pan\s+prstenu'),   # Pán prstenů / prsteňov
+    re.compile(r'^(hobit|hobbit)\b|:\s*(hobit|hobbit)\b'),  # Hobit
+    re.compile(r'\b(vetrelec|alien)\b'),           # Vetřelec / Alien
+    re.compile(r'\b(predator|predátor)\b'),        # Predator
+    re.compile(r'\btransformers\b'),               # Transformers
+    re.compile(r'\bspider-?man\b'),                # Spider-Man
+    re.compile(r'^iron\s*man\b|\biron\s*man\s*:'), # Iron Man (anchored)
+    re.compile(r'\bavengers\b'),                   # Avengers
+    re.compile(r'\bx-?men\b'),                     # X-Men
+    re.compile(r'\bhunger\s*games\b'),             # Hunger Games
+    re.compile(r'\bmaze\s*runner\b'),              # Maze Runner
+    re.compile(r'\bjurassic\b|\bjursk'),           # Jurassic / Jurský
+    re.compile(r'\binterstellar\b'),               # Interstellar
+    re.compile(r'\binception\b'),                  # Inception
+    re.compile(r'^tenet\b'),                       # Tenet (anchored - "tenet" je tiež slovo)
+    re.compile(r'\bmen\s+in\s+black\b'),           # Men In Black
+    re.compile(r'\bmad\s+max\b'),                  # Mad Max
+    re.compile(r'\bedge\s+of\s+tomorrow\b'),       # Edge of Tomorrow
+    re.compile(r'\boblivion\b'),                   # Oblivion
+    re.compile(r'^gravity\b'),                     # Gravity (anchored)
+    re.compile(r'^ender|\bender.?s\s+game\b'),     # Ender's Game
+    re.compile(r'\bgodzilla\b|^king\s*kong\b|\bking\s*kong\s*:'),  # Godzilla / King Kong
+    re.compile(r'^superman\b|\bsuperman\s*:'),     # Superman (anchored)
+    re.compile(r'^batman\b|\bbatman\s*:|the\s+batman\b|\bdark\s+knight\b'),  # Batman (anchored)
+    re.compile(r'\bdeadpool\b'),                   # Deadpool
+    re.compile(r'\bdoctor\s*strange\b'),           # Doctor Strange
+    re.compile(r'\bguardians\s+of\s+the\s+galax'), # Guardians of the Galaxy
+    re.compile(r'\bjustice\s*league\b'),           # Justice League
+    re.compile(r'\bwonder\s*woman\b'),             # Wonder Woman
+    re.compile(r'\bharry\s*potter\b'),             # Harry Potter — fantasy override
+)
+
+
 def _movie_subgenre(entry):
-    """Sub-kategória pre film/seriál (DVB genre, potom keyword scan)."""
+    """Sub-kategória pre film/seriál (DVB genre, potom title franchise override,
+    potom keyword scan)."""
     for g in (entry.get('genre') or []):
         try:
             g = int(g)
@@ -855,6 +907,14 @@ def _movie_subgenre(entry):
     if not text.strip():
         return _MV_INE
     text = _strip_accents_lower(text)
+    title_only = _strip_accents_lower(title)
+
+    # v1.0.4.1: Title-based franchise override — sci-fi/fantasy "trademark"
+    # tituly ktoré keyword scan nezachytí lebo distributor opisuje len plot.
+    for pat in _TITLE_SCIFI_PATTERNS:
+        if pat.search(title_only):
+            return _MV_SCIFI
+
     # v1.0.4: Horor je špeciálne striktný — TVH `disp_subtitle` často obsahuje
     # dlhý plot description (broadcasters ho zneužívajú namiesto disp_description).
     # Keywordy ako "desiv*", "hruz*" sa preto objavia v plot opisoch vojnových
@@ -862,7 +922,6 @@ def _movie_subgenre(entry):
     # vyžaduje match v *disp_title only*, nie v subtitle ani description.
     # Reálne horror filmy majú typicky kľúčové slovo priamo v názve
     # (napr. "Horor v lese", "Halloween", "Saw").
-    title_only = _strip_accents_lower(title)
     for pattern, subcat in _KEYWORD_TO_SUBCAT:
         if subcat == _MV_HOROR:
             if pattern.search(title_only):
@@ -871,6 +930,19 @@ def _movie_subgenre(entry):
         if pattern.search(text):
             return subcat
     return _MV_INE
+
+
+def _title_franchise_scifi_match(entry):
+    """v1.0.4.1: Vráti True ak title obsahuje známy sci-fi/fantasy franchise.
+    Používa sa v classify_dvr_entry pre override aj channel subgenre hint-u."""
+    title = entry.get('disp_title') or ''
+    if not title:
+        return False
+    title_only = _strip_accents_lower(title)
+    for pat in _TITLE_SCIFI_PATTERNS:
+        if pat.search(title_only):
+            return True
+    return False
 
 
 # --------------------------------------------------------------------------
@@ -1090,12 +1162,19 @@ def classify_dvr_entry(entry):
     top, top_reason = _determine_top_cat_with_reason(entry)
     sub_reason = ''
     if top == CAT_FILM or top == CAT_SERIAL:
-        sub = _channel_subgenre_hint(entry)
-        if sub:
-            sub_reason = 'channel hint'
+        # v1.0.4.1: Title franchise override (Duna, Pán prstenů, Star Wars, …)
+        # vyhráva pred channel subgenre hint-om — channel ako "Nova Action HD"
+        # by inak prerážal nemenovaný sci-fi obsah na mv_akcny.
+        if _title_franchise_scifi_match(entry):
+            sub = _MV_SCIFI
+            sub_reason = 'title franchise override (sci-fi/fantasy)'
         else:
-            sub = _movie_subgenre(entry)
-            sub_reason = 'movie_subgenre (DVB/keyword)'
+            sub = _channel_subgenre_hint(entry)
+            if sub:
+                sub_reason = 'channel hint'
+            else:
+                sub = _movie_subgenre(entry)
+                sub_reason = 'movie_subgenre (DVB/keyword)'
     else:
         cfg = SUBCAT_REGISTRY.get(top)
         if cfg and cfg[1] is not None:
