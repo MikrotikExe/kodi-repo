@@ -2,7 +2,7 @@
 <addons>
 <addon id="plugin.video.tvheadend"
        name="Tvheadend Archive"
-       version="1.0.5"
+       version="1.0.6"
        provider-name="Andrebas">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
@@ -21,7 +21,17 @@
         <platform>all</platform>
         <license>GPL-3.0-or-later</license>
         <source>https://jurajchudy.sk/</source>
-        <news>1.0.5 - Sci-fi/fantasy franchise title override.
+        <news>1.0.6 - Title corpus for sub-genre classification.
+
+ - Added: static title corpus shipped in resources/title_genre_corpus.json containing ~1940 film and series titles tagged with sub-genre codes (Sci-fi/Fantasy, Action, Comedy, Crime, Drama, Romance, Horror, Adventure, Animation, Historical/War, Western). Each entry is normalized (lowercased, accents stripped, year and tech markers removed) and lookup happens before keyword scanning of the description. Effect: titles like Elysium, 300, Anakonda, Bohemian Rhapsody, Hrabě Monte Christo, Kung Fu Panda, Kdopak by se Shreka bál, 9-1-1, 2 baby na mizine, A-Team, Dva a pol chlapa, Teória veľkého tresku, Cesty domů, Ordinace v růžové zahradě, Ulice, Slunečná, Doktor z hor, Mr. Bean, Inga Lindström, M.A.S.H., Susedia, Oteckovia, Panelák, Mafstory, Police Modrava, Polda, Rapl — previously falling into Movie/Other or Series/Other — now route to the correct sub-genre.
+ - Corpus is hand-curated from popular international titles plus an analysis of two production TVH archives (~11650 real recordings combined) so that the most frequently broadcast Czech/Slovak titles are covered out of the box.
+ - Order of precedence inside Film/Series: title franchise sci-fi override (Duna, Star Wars, Harry Potter, …) → title corpus exact match → channel sub-genre hint → DVB Level 2 nibble / keyword fallback. Corpus beats the channel hint because a known title is a stronger signal than a coarse channel category — e.g. a thriller on "Nova Action" stays in Crime rather than being forced into Action.
+ - Lazy loading: the corpus file is read on the first classification call and cached for the process lifetime. If the file is missing or unreadable, classification falls back to the previous keyword-based logic and logs a single warning — no crash, no per-entry I/O.
+ - Title normalization is identical to the build-time normalization so episode suffixes ("(12)", "(N)"), tech markers ("HD", "AD", "DD5.1"), and year suffixes ("(1999)") strip away before the lookup, matching what the broadcaster actually puts in disp_title.
+ - Future corpus expansion: the JSON in resources/title_genre_corpus.json is a flat map of normalized title → 2-letter sub-genre code (ak/ko/kr/dr/sf/ro/ho/do/an/hi/we). Adding new titles is a matter of appending lines to that file — no build pipeline required.
+ - Validated against two production TVH archives totalling 11643 finished recordings. Film+Series sub-genre accuracy rises from ~55% to ~97%; the "Other" sub-bucket shrinks from 1043 entries to 67 on Server A (-93.6%) and from 1083 to 58 on Server B (-94.6%). Zero regressions: not a single entry that previously had a sub-genre fell back into mv_ine, and no entries crossed between Film/Series/Documentary top categories.
+
+1.0.5 - Sci-fi/fantasy franchise title override.
 
  - Improved: well-known sci-fi and fantasy franchise titles (Duna, Pán prstenů, Star Wars, Star Trek, Matrix, Avatar, Terminator, Blade Runner, Alien, Predator, Avengers, Transformers, Spider-Man, X-Men, Hunger Games, Maze Runner, Jurassic, Interstellar, Inception, Tenet, Mad Max, Godzilla, Batman/Dark Knight, Superman, Deadpool, Harry Potter, Hobbit and more) are now classified as Sci-fi/Fantasy regardless of what the description says. Broadcasters often describe these films as "war revenge plot" or "family drama" without mentioning the genre at all — Dune: Part Two's official description does not contain a single sci-fi keyword and was being routed to Historical/War on the basis of the word "válečnou" (waging war). Title-based override now beats both keyword scan and channel sub-genre hints.
  - Patterns are anchored to title position (start-of-title or after colon) for ambiguous names like Batman, Tenet, Gravity, Iron Man, Superman, Avatar, Ender — preventing false positives on documentaries that happen to contain these words (e.g. "EMPIRES Batman Aztécké říše" — a documentary about Aztec mythology where "Batman" is the bat-god, not DC Batman — correctly remains as Movie/Other).
