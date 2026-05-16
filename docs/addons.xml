@@ -2,7 +2,7 @@
 <addons>
 <addon id="plugin.video.tvheadend"
        name="Tvheadend Archive"
-       version="1.0.1"
+       version="1.0.2"
        provider-name="Andrebas">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
@@ -21,7 +21,13 @@
         <platform>all</platform>
         <license>GPL-3.0-or-later</license>
         <source>https://jurajchudy.sk/</source>
-        <news>1.0.1 - Resume playback.
+        <news>1.0.2 - Series grouping fix.
+
+ - Fixed: episodes with combined audio/subtitle flags like "(AD,ST)" or "(HD,DD5.1)" are now correctly grouped under a single series folder. Previously each episode appeared as its own folder because the classifier didn't strip multi-marker parens. Example before: 8 separate "Simpsonovi XXI (N) (AD,ST)" folders; after: one "Simpsonovi XXI" folder with 8 episodes inside.
+ - Extended supported tech markers: ST, HD, AD, SS, 3D, UHD, DD, DTS, DD5.1, DTS-HD, DTS-MA, 5.1, 7.1, TT, P.
+ - Supported separators inside marker parens: comma or slash, with or without whitespace.
+
+1.0.1 - Resume playback.
 
  - Recordings now remember where you left off. After stopping playback, Kodi will offer "Resume from X:XX / Start from beginning" the next time you open the same recording.
  - Progress bar overlay on thumbnails in archive listings (visible in skins that support ResumeTime/TotalTime properties, e.g. Estuary).
