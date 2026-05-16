@@ -46,8 +46,18 @@ def _strip_accents_lower(s: str) -> str:
 # --------------------------------------------------------------------------
 _SUBTITLE_SERIES_PATTERN = re.compile(r'^\s*\d+/\d+\b')
 _TITLE_EPISODE_PATTERN = re.compile(r'\((\d{1,4})\)\s*(?:\([A-Z]{1,3}\))?\s*$')
+
+# Single tech/audio/subtitle marker — rozšír ak narazíš na ďalší
+# Pozn.: DTS-HD musí byť pred DTS aby alternace zachytila dlhšiu variantu
+_TECH_MARKER = (
+    r'(?:DD5\.1|DTS-HD|DTS-MA|UHD|DTS|5\.1|7\.1|ST|HD|AD|SS|3D|DD|TT|P)'
+)
+# Parens s 1+ tech markermi, oddelenými čiarkou alebo lomkou
+# (s alebo bez whitespace). Rieši napr. "(AD,ST)", "(HD, DD5.1)", "(AD/ST)".
 _TECH_MARKER_PATTERN = re.compile(
-    r'\s*\(\s*(?:ST|HD|AD|SS|3D|UHD|DD|DTS)\s*\)\s*', re.IGNORECASE
+    r'\s*\(\s*' + _TECH_MARKER +
+    r'(?:\s*[,/]\s*' + _TECH_MARKER + r')*\s*\)\s*',
+    re.IGNORECASE
 )
 
 
