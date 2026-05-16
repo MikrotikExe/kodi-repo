@@ -2,7 +2,7 @@
 <addons>
 <addon id="plugin.video.tvheadend"
        name="Tvheadend Archive"
-       version="1.0.2"
+       version="1.0.3"
        provider-name="Andrebas">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
@@ -21,7 +21,15 @@
         <platform>all</platform>
         <license>GPL-3.0-or-later</license>
         <source>https://jurajchudy.sk/</source>
-        <news>1.0.2 - Series grouping fix.
+        <news>1.0.3 - Bugfix release responding to first user feedback.
+
+ - Fixed: "Archive by channel" view crashed with "invalid literal for int() with base 10" when TVH HTTP API returned channel numbers as strings or with non-standard formatting. Now uses safe int parsing that handles None, strings, floats, and unicode garbage.
+ - Fixed: "Live TV" view crashed with "'>' not supported between instances of 'str' and 'int'" for channel groups containing channels with string-typed numbers.
+ - Fixed: HTTP Auth "Auto" mode now defaults to Basic auth (the default in TVH 4.x) with automatic fallback to Digest on 401. Previously it forced Digest regardless, breaking auth for most users.
+ - Added: breadcrumb path in the navigation header (e.g. "Archive / Markíza / 2026-05-10" instead of just "Tvheadend Archive") so you can see where you are at every nav depth.
+ - Added: full Python traceback in error logs when a handler crashes, for easier future debugging.
+
+1.0.2 - Series grouping fix.
 
  - Fixed: episodes with combined audio/subtitle flags like "(AD,ST)" or "(HD,DD5.1)" are now correctly grouped under a single series folder. Previously each episode appeared as its own folder because the classifier didn't strip multi-marker parens. Example before: 8 separate "Simpsonovi XXI (N) (AD,ST)" folders; after: one "Simpsonovi XXI" folder with 8 episodes inside.
  - Extended supported tech markers: ST, HD, AD, SS, 3D, UHD, DD, DTS, DD5.1, DTS-HD, DTS-MA, 5.1, 7.1, TT, P.
