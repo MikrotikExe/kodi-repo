@@ -1199,15 +1199,38 @@ _FALLBACK_KEYWORD_TO_TOP = (
     # (slovo "detský/detská" sa objavuje v opisoch dospelácich shows ako
     # "malú detskú izbu" v design show, "detský domov" v krimi reportáži atď.)
     # v1.0.4: spresnené aby nepadali false positives z keyword "detsk" v opise.
+    # v1.0.7: pridané ďalšie konkrétne detské show patterns.
     (re.compile(r'\b(rozpravk|pohadk|pre\s+deti|pro\s+deti|pre\s+najmens|'
-                r'kreslen[ay]|animovan[ay]|loutkov[ay])'),
+                r'kreslen[ay]|animovan[ay]|loutkov[ay]|'
+                r'byl\s+jednou\s+jeden|fidlibum|miniatel|trpaslic|'
+                r'labkov[aá]\s+patrol)'),
      CAT_DETSKE),
     (re.compile(r'\b(koncert|hudba|hudobn|hudebni|spevok|zpevak|spevak|'
                 r'piesn|pisni|pop\s|rock\s|metal\s|klasick)'),
      CAT_HUDBA),
+    # v1.0.7: rozšírené show/reality keywords pre sk/cz reality programy
+    # ktoré broadcasters často taggujú ako ct=0 (žiadny DVB tag) a doteraz
+    # padali do CAT_INE. Konkrétne názvy radšej ako generické slová aby
+    # nezasahovali do iných kategórií.
     (re.compile(r'\b(magazin|talk\s?show|\bshow\b|soutez|sutaz|'
-                r'reality\s?show|farmer|farma|zabavn|estrada|kucharsk)'),
+                r'reality\s?show|farmer|farma|zabavn|estrada|kucharsk|'
+                r'zamena\s+manzeliek|nebezpecne\s+vztahy|jak\s+to\s+dopadl|'
+                r'intim\s+s\s|prima\s+pauza|najlepsie\s+viraln|virtualn?\s+vide|'
+                r'extremne\s+pripad|dokonaly\s+sef|utajeny\s+sef|spriznene\s+duse|'
+                r'v\s+siedmom\s+nebi|poklad\s+z\s+pud|jak\s+se\s+stavi\s+sen|'
+                r'ano\s+sefe|top\s+gear|masterchef|babicovy\s+tip|'
+                r'varime\s+s|vareni\s+s|recept[aá]r|recepta?\s+prima|'
+                r'babica\s+vs|co\s+bude\s+dnes\s+k\s+vecer|nase\s+zlepsovak|'
+                r'afery\s+-?\s*neuver|rodinna\s+firma|vip\s+svet|na\s+plac|'
+                r'exkluziv|zachranari|u\s+tebe\s+nebo\s+u\s+me|'
+                r'nedorucena\s+tajemstv)'),
      CAT_SHOW),
+    # v1.0.7: hobby/lifestyle pattern pre home/garden/design shows ktoré
+    # padali do CAT_INE (Nové bývanie, Nová záhrada, Nové bývanie - dizajn).
+    (re.compile(r'\b(byvani[ae]?|byvanie|zahrad[ay]|zahradka|'
+                r'navrhar|dizajn\s+|design\s+interier|'
+                r'remeselni|stolarsk|truhlarsk|rybarsk[ay])'),
+     CAT_HOBBY),
     (re.compile(r'\b(dokument|documentary|prirod|history|'
                 r'vesmir|national\s+geographic|discovery)'),
      CAT_DOKUMENTY),
@@ -1262,7 +1285,15 @@ def _determine_top_cat_with_reason(entry):
     if ct == 5:
         return CAT_DETSKE, 'ct=5 Children'
 
-    return _guess_top_category_from_keywords(entry), 'keyword fallback (ct=0)'
+    guessed = _guess_top_category_from_keywords(entry)
+    if guessed == CAT_INE:
+        # v1.0.7: keyword fallback nenašiel match → ak je titul v title
+        # corpuse, vieme s istotou že ide o film (Návrat do Modré laguny
+        # na AMC ct=0 atď.). Povýšime CAT_INE → CAT_FILM, podžáner
+        # zoberie classify_dvr_entry z corpus-u v ďalšom kroku.
+        if _corpus_subgenre_match(entry) is not None:
+            return CAT_FILM, f'keyword fallback ine → film (corpus match, ct={ct})'
+    return guessed, f'keyword fallback (ct={ct})'
 
 
 def _determine_top_cat(entry):

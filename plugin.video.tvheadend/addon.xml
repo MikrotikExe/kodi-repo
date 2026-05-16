@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.tvheadend"
        name="Tvheadend Archive"
-       version="1.0.6"
+       version="1.0.7"
        provider-name="Andrebas">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
@@ -20,7 +20,13 @@
         <platform>all</platform>
         <license>GPL-3.0-or-later</license>
         <source>https://jurajchudy.sk/</source>
-        <news>1.0.6 - Title corpus for sub-genre classification.
+        <news>1.0.7 - Fewer entries in Other.
+
+ - Extended keyword fallback for ct=0 (DVB-untagged) recordings. New Show patterns catch sk/cz reality formats (Zámena manželiek, Nebezpečné vztahy live, Jak to dopadlo, Intim s Heidi Janků, Prima Pauza: Partička, Spřízněné duše, V siedmom nebi, Extrémne prípady, Dokonalý šéf, Utajený šéf, Top Gear, MasterChef, Babicovy tipy, Najlepšie virálne videá, Ano šéfe!). New Children patterns catch Byl jednou jeden rok, Fidlibumove pokusy, Zázračný miniateliér, Trpaslíci, Labková patrola. New Hobby patterns catch home/garden/design programmes (Nové bývanie, Nová záhrada, Nové bývanie - dizajn, Jak se staví sen).
+ - Added: ct=0 entries that hit the keyword fallback's Other bucket but whose title is in the title corpus are now promoted to Film with the corpus-derived sub-genre. Fixes movies like "Návrat do Modré laguny" on AMC (broadcaster tagged ct=0 with no channel hint) — previously routed to Other, now correctly Film/Romance.
+ - The TV-idle filler titles "Přestávka ve vysílání", "Konec vysílání" and "Závěr vysílání" remain in Other by design — these are signal-off cards recorded as overflow on the previous programme and there's no meaningful category for them.
+
+1.0.6 - Title corpus for sub-genre classification.
 
  - Added: static title corpus shipped in resources/title_genre_corpus.json containing ~1940 film and series titles tagged with sub-genre codes (Sci-fi/Fantasy, Action, Comedy, Crime, Drama, Romance, Horror, Adventure, Animation, Historical/War, Western). Each entry is normalized (lowercased, accents stripped, year and tech markers removed) and lookup happens before keyword scanning of the description. Effect: titles like Elysium, 300, Anakonda, Bohemian Rhapsody, Hrabě Monte Christo, Kung Fu Panda, Kdopak by se Shreka bál, 9-1-1, 2 baby na mizine, A-Team, Dva a pol chlapa, Teória veľkého tresku, Cesty domů, Ordinace v růžové zahradě, Ulice, Slunečná, Doktor z hor, Mr. Bean, Inga Lindström, M.A.S.H., Susedia, Oteckovia, Panelák, Mafstory, Police Modrava, Polda, Rapl — previously falling into Movie/Other or Series/Other — now route to the correct sub-genre.
  - Corpus is hand-curated from popular international titles plus an analysis of two production TVH archives (~11650 real recordings combined) so that the most frequently broadcast Czech/Slovak titles are covered out of the box.
