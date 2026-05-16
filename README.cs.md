@@ -6,7 +6,7 @@ Osobní Kodi repozitář hostovaný uživatelem **Andrebas**.
 
 Aktuálně obsahuje:
 
-- **[plugin.video.tvheadend](plugin.video.tvheadend/)** — *Tvheadend Archive* — doplňkový prohlížeč DVR archivu pro `pvr.hts`. Prochází DVR nahrávky seskupené podle inteligentních kategorií a podžánrů, vyhledává podle názvu bez diakritiky a vede historii naposledy sledovaných.
+- **[plugin.video.tvheadend](plugin.video.tvheadend/)** — *Tvheadend Archive* — doplňkový prohlížeč DVR archivu pro `pvr.hts`. Prochází DVR nahrávky seskupené podle inteligentních kategorií a podžánrů, vyhledává podle názvu bez diakritiky, **pamatuje si pozici přehrávání (resume)** a vede historii naposledy sledovaných.
 
 Repozitář je hostovaný přes GitHub Pages a aktualizace se publikují automaticky přes GitHub Actions při každém novém tagu.
 

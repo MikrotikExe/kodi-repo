@@ -6,7 +6,7 @@ Personal Kodi addon repository hosting addons maintained by **Andrebas**.
 
 Currently includes:
 
-- **[plugin.video.tvheadend](plugin.video.tvheadend/)** — *Tvheadend Archive* — a DVR archive companion to `pvr.hts`. Browses DVR recordings grouped by smart categories and subgenres, searches by title without diacritics, and keeps a recently-watched history.
+- **[plugin.video.tvheadend](plugin.video.tvheadend/)** — *Tvheadend Archive* — a DVR archive companion to `pvr.hts`. Browses DVR recordings grouped by smart categories and subgenres, searches by title without diacritics, **resumes playback where you left off**, and keeps a recently-watched history.
 
 The repository is hosted via GitHub Pages and updates are pushed automatically by GitHub Actions on every tag.
 
@@ -54,7 +54,7 @@ kodi-repo/
 
 ```bash
 git add plugin.video.tvheadend
-git commit -m "Tvheadend Archive 1.0.1 — picon prefetch"
+git commit -m "Tvheadend Archive 1.0.1 — resume playback"
 git tag v1.0.1
 git push origin main --tags
 ```
@@ -100,7 +100,7 @@ The URL in `repository.andrebas.kodi/addon.xml` must match this. By default it p
 https://mikrotikexe.github.io/kodi-repo/
 ```
 
-**If your GitHub username is NOT `andrebas`**, before first push:
+**If your GitHub username is NOT `mikrotikexe`**, before first push:
 
 ```bash
 # Find & replace in repository.andrebas.kodi/addon.xml:
