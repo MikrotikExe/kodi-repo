@@ -18,3 +18,4 @@ Thumbs.db
 # Lokálne testing artefakty
 release_assets/
 *.bak
+tvheadend-*-delta.zip
