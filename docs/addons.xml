@@ -84,7 +84,7 @@ Features:
  - DVR archive browser grouped by smart categories and subgenres (Films, Series, Sports, News, Shows, Kids, Music, Arts, Docs, Hobby, Other). Series are auto-grouped by canonical title across episodes.
  - Alternative archive view "By channel" → date → recording.
  - Live TV with channel tags and "now playing" EPG.
- - Search by recording title — diacritics-insensitive, word-prefix matching (e.g. "kom" finds "Komisař Rex"; "Kriminálka" does NOT match "na"). Two-phase navigation keeps results on screen after playback.
+ - Search by recording title — diacritics-insensitive, word-prefix matching (e.g. a query of "kom" finds titles starting with that prefix; partial matches inside words do not match). Two-phase navigation keeps results on screen after playback.
  - Recently watched history — persistent across Kodi restarts, configurable cap, hidden when empty.
  - "Test connection" diagnostic inside Settings.
  - Full Slovak, Czech and English localization.
