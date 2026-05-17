@@ -1068,6 +1068,23 @@ def handler_resume_clear(args: dict) -> None:
     end_directory(succeeded=True, content_type="")
 
 
+def handler_imdb_cache_wipe(args: dict) -> None:
+    """v1.0.9: Vymaže IMDb cache (online metadata lookup výsledky)."""
+    try:
+        from lib import imdb_lookup
+        n = imdb_lookup.cache_size()
+        if n == 0:
+            notify(tr(30434) % 0)
+            end_directory(succeeded=True, content_type="")
+            return
+        if xbmcgui.Dialog().yesno(tr(30400), tr(30434) % n + '\n' + tr(30432) + '?'):
+            imdb_lookup.cache_wipe()
+            notify(tr(30433))
+    except Exception:
+        pass
+    end_directory(succeeded=True, content_type="")
+
+
 # --------------------------------------------------------------------------
 # Search (vyhľadávanie v DVR archíve, bez diakritiky)
 # --------------------------------------------------------------------------
@@ -1225,6 +1242,10 @@ def handler_test_connection() -> None:
 
 def handler_settings() -> None:
     addon().openSettings()
+    # Sync the IMDb feature flag after the dialog closes (Kodi has now
+    # persisted any changes the user made). See _sync_imdb_flag().
+    _sync_imdb_flag()
+    end_directory(succeeded=False, content_type="")
 
 
 # --------------------------------------------------------------------------
@@ -1247,10 +1268,101 @@ _ROUTES = {
     "recent":                   handler_recent,
     "history_clear":            handler_history_clear,
     "resume_clear":             handler_resume_clear,
+    "imdb_cache_wipe":           handler_imdb_cache_wipe,
     "search":                   handler_search,
     "test_connection":          lambda args: handler_test_connection(),
     "settings":                 lambda args: handler_settings(),
 }
+
+
+def _sync_imdb_flag() -> None:
+    """Synchronize the IMDb feature flag file with the Kodi setting value.
+    This is called both from handler_settings() (after the user closes the
+    Settings dialog) and from route() (once per plugin invocation, so that
+    changes made via Kodi's system menu — pravý klik na addon → Nastavenia,
+    which bypasses handler_settings — are also picked up).
+
+    The flag file is what lib/imdb_lookup.py checks per-classification —
+    using a file avoids per-entry Kodi setting API calls that would log
+    "Invalid setting type" if the setting was never stored.
+
+    On state change (flag created or removed), invalidate the classifier
+    cache so IMDb lookup takes effect immediately on the next directory
+    listing rather than after the 60-second cache TTL expires.
+    """
+    try:
+        import os
+        import xbmcvfs
+        data_dir = xbmcvfs.translatePath(
+            'special://profile/addon_data/plugin.video.tvheadend/')
+        if not os.path.isdir(data_dir):
+            os.makedirs(data_dir, exist_ok=True)
+        flag = os.path.join(data_dir, 'imdb_lookup_enabled')
+
+        was_enabled = os.path.isfile(flag)
+
+        a = addon()
+        enabled = False
+        method_used = "unknown"
+
+        # Try getSettingBool first — most direct path for boolean settings.
+        try:
+            enabled = bool(a.getSettingBool('online_metadata_lookup'))
+            method_used = "getSettingBool"
+        except Exception as e1:
+            # Fallback to getSettingString
+            try:
+                raw = a.getSettingString('online_metadata_lookup')
+                enabled = (raw or '').strip().lower() == 'true'
+                method_used = "getSettingString (raw=%r)" % raw
+            except Exception as e2:
+                log("imdb flag sync: both Kodi setting reads failed: %s / %s"
+                    % (e1, e2), xbmc.LOGWARNING)
+                return
+
+        # Only log on state change, otherwise this would spam every plugin
+        # invocation (sync runs in route()).
+        state_changed = (enabled != was_enabled)
+        if state_changed:
+            log("imdb flag sync: enabled=%s via %s (state changed: was=%s)"
+                % (enabled, method_used, was_enabled), xbmc.LOGINFO)
+
+        if enabled:
+            try:
+                with open(flag, 'w') as f:
+                    f.write('1')
+                if state_changed:
+                    log("imdb flag sync: created flag file at %s" % flag,
+                        xbmc.LOGINFO)
+            except Exception as e:
+                log("imdb flag sync: failed to create flag: %s" % e,
+                    xbmc.LOGWARNING)
+        else:
+            if os.path.isfile(flag):
+                try:
+                    os.remove(flag)
+                    if state_changed:
+                        log("imdb flag sync: removed flag file", xbmc.LOGINFO)
+                except Exception as e:
+                    log("imdb flag sync: failed to remove flag: %s" % e,
+                        xbmc.LOGWARNING)
+
+        # If the flag state changed (enabled toggled on or off), invalidate
+        # the classifier cache so the next listing re-runs classification
+        # with the new IMDb lookup behaviour rather than serving stale
+        # cached output. Otherwise the user has to wait up to 60 seconds
+        # for the cache TTL to expire after toggling the setting.
+        if state_changed:
+            try:
+                from lib import classifier as _classifier_mod
+                _classifier_mod.invalidate_caches()
+                log("imdb flag sync: invalidated classifier cache",
+                    xbmc.LOGINFO)
+            except Exception as e:
+                log("imdb flag sync: cache invalidation failed: %s" % e,
+                    xbmc.LOGWARNING)
+    except Exception as e:
+        log("imdb flag sync failed: %s" % e, xbmc.LOGWARNING)
 
 
 def route() -> None:
@@ -1264,6 +1376,10 @@ def route() -> None:
         )
     except Exception:
         pass
+    # v1.0.9: Proactive IMDb flag sync once per plugin invocation. Covers
+    # the case where the user toggled the setting via Kodi's system menu
+    # (right-click on addon → Nastavenia) which bypasses handler_settings.
+    _sync_imdb_flag()
     action = args.get("action") or "root"
     handler = _ROUTES.get(action)
     if handler is None:

@@ -268,3 +268,24 @@ msgstr "Nahrávka"
 msgctxt "#30531"
 msgid "days"
 msgstr "dní"
+
+msgctxt "#30430"
+msgid "Online metadata"
+msgstr "Online metadata"
+
+msgctxt "#30431"
+msgid "Look up unknown titles on IMDb"
+msgstr "Hledat neznámé tituly na IMDb"
+
+msgctxt "#30432"
+msgid "Wipe IMDb cache"
+msgstr "Vymazat IMDb cache"
+
+msgctxt "#30433"
+msgid "IMDb cache wiped"
+msgstr "IMDb cache vymazána"
+
+msgctxt "#30434"
+msgid "IMDb cache: %d entries"
+msgstr "IMDb cache: %d záznamů"
+

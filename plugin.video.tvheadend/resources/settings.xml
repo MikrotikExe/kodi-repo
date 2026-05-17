@@ -158,6 +158,13 @@
                     <control type="toggle"/>
                 </setting>
             </group>
+            <group id="5" label="30430">
+                <setting id="online_metadata_lookup" type="boolean" label="30431">
+                    <level>0</level>
+                    <default>false</default>
+                    <control type="toggle"/>
+                </setting>
+            </group>
         </category>
     </section>
 </settings>

@@ -1293,7 +1293,36 @@ def _determine_top_cat_with_reason(entry):
         # zoberie classify_dvr_entry z corpus-u v ďalšom kroku.
         if _corpus_subgenre_match(entry) is not None:
             return CAT_FILM, f'keyword fallback ine → film (corpus match, ct={ct})'
+
+        # v1.0.9: posledný safety net — IMDb GraphQL lookup. Default OFF
+        # cez settings toggle "online_metadata_lookup" v imdb_lookup.py.
+        # Ak je zapnutý a IMDb vráti top override (Reality-TV/Documentary/
+        # News/Sport/Music/Talk-Show/Game-Show), použij. Inak ak vráti
+        # film sub-žáner, povýš top na CAT_FILM. Inak → ine.
+        try:
+            from . import imdb_lookup
+            imdb_top, imdb_sub = imdb_lookup.lookup(entry)
+            if imdb_top is not None and imdb_top in _IMDB_TOP_TO_CAT:
+                return _IMDB_TOP_TO_CAT[imdb_top], f'IMDb top override → {imdb_top} (ct={ct})'
+            if imdb_sub is not None:
+                return CAT_FILM, f'IMDb lookup ine → film (ct={ct})'
+        except Exception:
+            pass  # graceful — never crash classification on network problem
     return guessed, f'keyword fallback (ct={ct})'
+
+
+# Map IMDb-derived top names to our CAT_* constants. Kept here (not in
+# imdb_lookup.py) to avoid a circular dependency between the two modules.
+_IMDB_TOP_TO_CAT = {
+    'film':           CAT_FILM,
+    'serial':         CAT_SERIAL,
+    'show':           CAT_SHOW,
+    'dokumenty':      CAT_DOKUMENTY,
+    'spravodajstvo':  CAT_SPRAVODAJSTVO,
+    'sport':          CAT_SPORT,
+    'hudba':          CAT_HUDBA,
+    'detske':         CAT_DETSKE,
+}
 
 
 def _determine_top_cat(entry):
@@ -1338,6 +1367,17 @@ def classify_dvr_entry(entry):
                 else:
                     sub = _movie_subgenre(entry)
                     sub_reason = 'movie_subgenre (DVB/keyword)'
+                    # v1.0.9: ak movie_subgenre vrátil mv_ine, skús IMDb
+                    # lookup ako posledný fallback. Default OFF cez settings.
+                    if sub == _MV_INE:
+                        try:
+                            from . import imdb_lookup
+                            _, imdb_sub = imdb_lookup.lookup(entry)
+                            if imdb_sub is not None:
+                                sub = imdb_sub
+                                sub_reason = 'IMDb lookup (mv_ine → %s)' % imdb_sub
+                        except Exception:
+                            pass
     else:
         cfg = SUBCAT_REGISTRY.get(top)
         if cfg and cfg[1] is not None:

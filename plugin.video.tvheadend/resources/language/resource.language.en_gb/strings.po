@@ -268,3 +268,24 @@ msgstr "Recording"
 msgctxt "#30531"
 msgid "days"
 msgstr "days"
+
+msgctxt "#30430"
+msgid "Online metadata"
+msgstr "Online metadata"
+
+msgctxt "#30431"
+msgid "Look up unknown titles on IMDb"
+msgstr "Look up unknown titles on IMDb"
+
+msgctxt "#30432"
+msgid "Wipe IMDb cache"
+msgstr "Wipe IMDb cache"
+
+msgctxt "#30433"
+msgid "IMDb cache wiped"
+msgstr "IMDb cache wiped"
+
+msgctxt "#30434"
+msgid "IMDb cache: %d entries"
+msgstr "IMDb cache: %d entries"
+
