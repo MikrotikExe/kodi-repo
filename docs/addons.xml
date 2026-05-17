@@ -2,7 +2,7 @@
 <addons>
 <addon id="plugin.video.tvheadend"
        name="Tvheadend Archive"
-       version="1.0.8"
+       version="1.0.9"
        provider-name="Andrebas">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
@@ -21,7 +21,16 @@
         <platform>all</platform>
         <license>GPL-3.0-or-later</license>
         <source>https://jurajchudy.sk/</source>
-        <news>1.0.8 - Minor classifier refinements after 1.0.7 deploy.
+        <news>1.0.9 - Optional IMDb lookup for unknown titles.
+
+ - Added: optional online metadata lookup via IMDb GraphQL as a last-resort fallback for recordings whose title is not in the local corpus and whose keyword fallback would route them to Other. Default OFF. Enable in Settings → DVR Archive → Online metadata → "Look up unknown titles on IMDb". Results are cached locally so the next session does not re-fetch.
+ - Non-blocking design: cache misses queue the title for a background worker and return instantly. The directory list opens with no perceptible delay; over the next few seconds the worker fills the cache at one request per second. The next open of the same category shows the IMDb-derived classification.
+ - Recognised IMDb genre tags map to the plugin's sub-genres (Action, Comedy, Crime, Drama, Sci-Fi, Romance, Horror, Adventure, Animation, Historical/War, Western) or trigger a top-category override (Reality-TV / Talk-Show / Game-Show → Shows; Documentary → Documentaries; News → News; Sport → Sports; Music → Music).
+ - Cache lives in the plugin data directory (imdb_cache.json) and survives restarts. Negative cache entries (titles IMDb did not find) expire after 30 days so newly indexed titles get a second chance.
+ - Network safety: 5 s timeout per request, 1 s rate limit between live calls, all exceptions caught (a network or schema problem degrades silently to the existing keyword fallback, plugin never crashes because of IMDb).
+ - Privacy: opt-in only; the plugin never makes outbound HTTP requests for classification unless this setting is explicitly enabled.
+
+1.0.8 - Minor classifier refinements after 1.0.7 deploy.
 
  - Extended Sport keyword fallback and Sport sub-genre pattern to recognise additional numbered fight event series — events that broadcasters tag as ct=0 with no channel hint now route to Sport / Combat sports instead of Other.
  - Title corpus expanded by a couple of additional films that production archives surfaced as still falling into Other.
